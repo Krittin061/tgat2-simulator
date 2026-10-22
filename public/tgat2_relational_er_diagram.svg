@@ -1,0 +1,396 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 1180" width="100%" height="100%" style="background-color: #0b0f19; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;">
+  <defs>
+    <!-- Drop Shadow Filter -->
+    <filter id="cardGlow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <!-- Header Gradients -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Marker Crow's Foot Definition -->
+    <marker id="crowFoot" viewBox="0 0 16 16" refX="16" refY="8" markerWidth="12" markerHeight="12" orient="auto">
+      <path d="M 0 0 L 16 8 L 0 16 M 0 8 L 16 8" fill="none" stroke="#60a5fa" stroke-width="2" />
+    </marker>
+    <marker id="oneMandatory" viewBox="0 0 16 16" refX="0" refY="8" markerWidth="12" markerHeight="12" orient="auto">
+      <line x1="4" y1="0" x2="4" y2="16" stroke="#60a5fa" stroke-width="2" />
+      <line x1="10" y1="0" x2="10" y2="16" stroke="#60a5fa" stroke-width="2" />
+    </marker>
+  </defs>
+
+  <!-- Title & Subtitle -->
+  <g text-anchor="middle">
+    <text x="660" y="45" font-size="26" font-weight="800" fill="#f8fafc" letter-spacing="1">🎯 TGAT2 SIMULATOR - RELATIONAL ER DIAGRAM</text>
+    <text x="660" y="75" font-size="14" fill="#94a3b8">สถาปัตยกรรมฐานข้อมูลเชิงสัมพันธ์แบบ Normalized 3NF (5 ตารางมาตรฐาน)</text>
+  </g>
+
+  <!-- ==================== CONNECTING LINES (Crow's Foot Notation) ==================== -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none">
+    <!-- USERS (1) to TEST_EVENTS (N) -->
+    <!-- From bottom of USERS (x: 275, y: 310) to top of TEST_EVENTS (x: 275, y: 390) -->
+    <path d="M 275 310 L 275 390" />
+    <!-- 1 side at USERS (two crossbars) -->
+    <line x1="265" y1="322" x2="285" y2="322" stroke="#38bdf8" stroke-width="2" />
+    <line x1="265" y1="328" x2="285" y2="328" stroke="#38bdf8" stroke-width="2" />
+    <!-- N side at TEST_EVENTS (crow foot + circle) -->
+    <circle cx="275" cy="365" r="4" fill="#0b0f19" stroke="#38bdf8" stroke-width="2" />
+    <path d="M 265 390 L 275 375 L 285 390" stroke="#38bdf8" stroke-width="2" />
+
+    <!-- QUESTION_TOPICS (1) to QUESTIONS (N) -->
+    <!-- From bottom of QUESTION_TOPICS (x: 990, y: 280) to top of QUESTIONS (x: 990, y: 360) -->
+    <path d="M 990 280 L 990 360" />
+    <!-- 1 side at QUESTION_TOPICS -->
+    <line x1="980" y1="295" x2="1000" y2="295" stroke="#38bdf8" stroke-width="2" />
+    <line x1="980" y1="301" x2="1000" y2="301" stroke="#38bdf8" stroke-width="2" />
+    <!-- N side at QUESTIONS (crow foot) -->
+    <circle cx="990" cy="335" r="4" fill="#0b0f19" stroke="#38bdf8" stroke-width="2" />
+    <path d="M 980 360 L 990 345 L 1000 360" stroke="#38bdf8" stroke-width="2" />
+
+    <!-- TEST_EVENTS (1) to TEST_ANSWERS (N) -->
+    <!-- From bottom of TEST_EVENTS (x: 275, y: 770) down and right to TEST_ANSWERS (x: 480, y: 890) -->
+    <path d="M 275 770 L 275 830 Q 275 860 305 860 L 520 860 L 520 890" />
+    <!-- 1 side at TEST_EVENTS -->
+    <line x1="265" y1="785" x2="285" y2="785" stroke="#38bdf8" stroke-width="2" />
+    <line x1="265" y1="791" x2="285" y2="791" stroke="#38bdf8" stroke-width="2" />
+    <!-- N side at TEST_ANSWERS -->
+    <circle cx="520" cy="870" r="4" fill="#0b0f19" stroke="#38bdf8" stroke-width="2" />
+    <path d="M 510 890 L 520 878 L 530 890" stroke="#38bdf8" stroke-width="2" />
+
+    <!-- QUESTIONS (1) to TEST_ANSWERS (N) -->
+    <!-- From bottom of QUESTIONS (x: 990, y: 830) down and left to TEST_ANSWERS (x: 800, y: 890) -->
+    <path d="M 990 830 L 990 860 Q 990 860 960 860 L 800 860 L 800 890" />
+    <!-- 1 side at QUESTIONS -->
+    <line x1="980" y1="845" x2="1000" y2="845" stroke="#38bdf8" stroke-width="2" />
+    <line x1="980" y1="851" x2="1000" y2="851" stroke="#38bdf8" stroke-width="2" />
+    <!-- N side at TEST_ANSWERS -->
+    <circle cx="800" cy="870" r="4" fill="#0b0f19" stroke="#38bdf8" stroke-width="2" />
+    <path d="M 790 890 L 800 878 L 810 890" stroke="#38bdf8" stroke-width="2" />
+  </g>
+
+  <!-- ==================== TABLE 1: USERS ==================== -->
+  <g transform="translate(60, 110)" filter="url(#cardGlow)">
+    <rect width="430" height="200" rx="8" fill="#131b2e" stroke="#2563eb" stroke-width="1.8" />
+    <!-- Header -->
+    <path d="M 0 8 Q 0 0 8 0 L 422 0 Q 430 0 430 8 L 430 38 L 0 38 Z" fill="#1e293b" />
+    <text x="215" y="25" text-anchor="middle" font-size="15" font-weight="bold" fill="#38bdf8" letter-spacing="1">USERS (ข้อมูลผู้ใช้)</text>
+    <line x1="0" y1="38" x2="430" y2="38" stroke="#334155" stroke-width="1" />
+
+    <!-- Columns Header -->
+    <rect x="0" y="38" width="430" height="22" fill="#0f172a" />
+    <text x="15" y="53" font-size="11" font-weight="bold" fill="#64748b">TYPE</text>
+    <text x="85" y="53" font-size="11" font-weight="bold" fill="#64748b">COLUMN</text>
+    <text x="180" y="53" font-size="11" font-weight="bold" fill="#64748b">KEY</text>
+    <text x="235" y="53" font-size="11" font-weight="bold" fill="#64748b">DESCRIPTION</text>
+    <line x1="0" y1="60" x2="430" y2="60" stroke="#1e293b" stroke-width="1" />
+
+    <!-- Rows -->
+    <!-- id -->
+    <text x="15" y="82" font-size="12" fill="#94a3b8" font-family="monospace">uuid</text>
+    <text x="85" y="82" font-size="12" font-weight="600" fill="#f1f5f9">id</text>
+    <rect x="175" y="70" width="28" height="16" rx="4" fill="#1d4ed8" />
+    <text x="189" y="82" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">PK</text>
+    <text x="235" y="82" font-size="12" fill="#cbd5e1">Primary Key</text>
+
+    <!-- name -->
+    <line x1="0" y1="92" x2="430" y2="92" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="112" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="112" font-size="12" font-weight="600" fill="#f1f5f9">name</text>
+    <text x="235" y="112" font-size="12" fill="#cbd5e1">ชื่อ-นามสกุล ผู้ใช้</text>
+
+    <!-- email -->
+    <line x1="0" y1="122" x2="430" y2="122" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="142" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="142" font-size="12" font-weight="600" fill="#f1f5f9">email</text>
+    <rect x="175" y="130" width="28" height="16" rx="4" fill="#d97706" />
+    <text x="189" y="142" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">UK</text>
+    <text x="235" y="142" font-size="12" fill="#cbd5e1">อีเมลผู้ใช้งาน (ไม่ซ้ำ)</text>
+
+    <!-- password -->
+    <line x1="0" y1="152" x2="430" y2="152" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="172" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="172" font-size="12" font-weight="600" fill="#f1f5f9">password</text>
+    <text x="235" y="172" font-size="12" fill="#cbd5e1">รหัสผ่านสำหรับ Login</text>
+
+    <!-- created_at -->
+    <line x1="0" y1="182" x2="430" y2="182" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="196" font-size="11" fill="#94a3b8" font-family="monospace">timestamptz</text>
+    <text x="85" y="196" font-size="12" font-weight="600" fill="#f1f5f9">created_at</text>
+    <text x="235" y="196" font-size="12" fill="#cbd5e1">เวลาที่ลงทะเบียน</text>
+  </g>
+
+  <!-- ==================== TABLE 2: QUESTION_TOPICS ==================== -->
+  <g transform="translate(770, 110)" filter="url(#cardGlow)">
+    <rect width="450" height="170" rx="8" fill="#131b2e" stroke="#059669" stroke-width="1.8" />
+    <!-- Header -->
+    <path d="M 0 8 Q 0 0 8 0 L 442 0 Q 450 0 450 8 L 450 38 L 0 38 Z" fill="#1e293b" />
+    <text x="225" y="25" text-anchor="middle" font-size="15" font-weight="bold" fill="#34d399" letter-spacing="1">QUESTION_TOPICS (หัวข้อข้อสอบ 16 ชุด)</text>
+    <line x1="0" y1="38" x2="450" y2="38" stroke="#334155" stroke-width="1" />
+
+    <!-- Columns Header -->
+    <rect x="0" y="38" width="450" height="22" fill="#0f172a" />
+    <text x="15" y="53" font-size="11" font-weight="bold" fill="#64748b">TYPE</text>
+    <text x="85" y="53" font-size="11" font-weight="bold" fill="#64748b">COLUMN</text>
+    <text x="200" y="53" font-size="11" font-weight="bold" fill="#64748b">KEY</text>
+    <text x="250" y="53" font-size="11" font-weight="bold" fill="#64748b">DESCRIPTION</text>
+    <line x1="0" y1="60" x2="450" y2="60" stroke="#1e293b" stroke-width="1" />
+
+    <!-- id -->
+    <text x="15" y="82" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="82" font-size="12" font-weight="600" fill="#f1f5f9">id</text>
+    <rect x="195" y="70" width="28" height="16" rx="4" fill="#1d4ed8" />
+    <text x="209" y="82" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">PK</text>
+    <text x="250" y="82" font-size="12" fill="#cbd5e1">รหัสหัวข้อ 1 ถึง 16</text>
+
+    <!-- skill_name -->
+    <line x1="0" y1="92" x2="450" y2="92" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="112" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="112" font-size="12" font-weight="600" fill="#f1f5f9">skill_name</text>
+    <text x="250" y="112" font-size="12" fill="#cbd5e1">ทักษะหลัก (ภาษา, จำนวน, มิติ, เหตุผล)</text>
+
+    <!-- topic_name -->
+    <line x1="0" y1="122" x2="450" y2="122" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="142" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="142" font-size="12" font-weight="600" fill="#f1f5f9">topic_name</text>
+    <text x="250" y="142" font-size="12" fill="#cbd5e1">16 หัวข้อย่อย (เช่น แบบพับกล่อง, อนุกรม)</text>
+
+    <!-- questions_count -->
+    <line x1="0" y1="152" x2="450" y2="152" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="166" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="166" font-size="12" font-weight="600" fill="#f1f5f9">questions_count</text>
+    <text x="250" y="166" font-size="12" fill="#cbd5e1">จำนวนข้อต่อชุด (5 ข้อเสมอ = 80 ข้อ)</text>
+  </g>
+
+  <!-- ==================== TABLE 3: TEST_EVENTS ==================== -->
+  <g transform="translate(60, 390)" filter="url(#cardGlow)">
+    <rect width="430" height="380" rx="8" fill="#131b2e" stroke="#8b5cf6" stroke-width="1.8" />
+    <!-- Header -->
+    <path d="M 0 8 Q 0 0 8 0 L 422 0 Q 430 0 430 8 L 430 38 L 0 38 Z" fill="#1e293b" />
+    <text x="215" y="25" text-anchor="middle" font-size="15" font-weight="bold" fill="#a78bfa" letter-spacing="1">TEST_EVENTS (รอบการสอบ)</text>
+    <line x1="0" y1="38" x2="430" y2="38" stroke="#334155" stroke-width="1" />
+
+    <!-- Columns Header -->
+    <rect x="0" y="38" width="430" height="22" fill="#0f172a" />
+    <text x="15" y="53" font-size="11" font-weight="bold" fill="#64748b">TYPE</text>
+    <text x="85" y="53" font-size="11" font-weight="bold" fill="#64748b">COLUMN</text>
+    <text x="195" y="53" font-size="11" font-weight="bold" fill="#64748b">KEY</text>
+    <text x="250" y="53" font-size="11" font-weight="bold" fill="#64748b">DESCRIPTION</text>
+    <line x1="0" y1="60" x2="430" y2="60" stroke="#1e293b" stroke-width="1" />
+
+    <!-- id -->
+    <text x="15" y="82" font-size="12" fill="#94a3b8" font-family="monospace">uuid</text>
+    <text x="85" y="82" font-size="12" font-weight="600" fill="#f1f5f9">id</text>
+    <rect x="190" y="70" width="28" height="16" rx="4" fill="#1d4ed8" />
+    <text x="204" y="82" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">PK</text>
+    <text x="250" y="82" font-size="12" fill="#cbd5e1">Primary Key</text>
+
+    <!-- user_id -->
+    <line x1="0" y1="92" x2="430" y2="92" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="112" font-size="12" fill="#94a3b8" font-family="monospace">uuid</text>
+    <text x="85" y="112" font-size="12" font-weight="600" fill="#f1f5f9">user_id</text>
+    <rect x="190" y="100" width="28" height="16" rx="4" fill="#059669" />
+    <text x="204" y="112" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">FK</text>
+    <text x="250" y="112" font-size="12" fill="#cbd5e1">FK -&gt; USERS.id</text>
+
+    <!-- correct_count -->
+    <line x1="0" y1="122" x2="430" y2="122" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="142" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="142" font-size="12" font-weight="600" fill="#f1f5f9">correct_count</text>
+    <text x="250" y="142" font-size="12" fill="#cbd5e1">คะแนนรวมข้อที่ถูก (เต็ม 80)</text>
+
+    <!-- time_spent_minutes -->
+    <line x1="0" y1="152" x2="430" y2="152" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="172" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="172" font-size="12" font-weight="600" fill="#f1f5f9">time_spent_minutes</text>
+    <text x="250" y="172" font-size="12" fill="#cbd5e1">เวลาที่ใช้ทำข้อสอบ (นาที)</text>
+
+    <!-- verbal_correct -->
+    <line x1="0" y1="182" x2="430" y2="182" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="202" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="202" font-size="12" font-weight="600" fill="#f1f5f9">verbal_correct</text>
+    <text x="250" y="202" font-size="12" fill="#cbd5e1">คะแนนพาร์ตภาษา (เต็ม 20)</text>
+
+    <!-- numerical_correct -->
+    <line x1="0" y1="212" x2="430" y2="212" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="232" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="232" font-size="12" font-weight="600" fill="#f1f5f9">numerical_correct</text>
+    <text x="250" y="232" font-size="12" fill="#cbd5e1">คะแนนพาร์ตจำนวน (เต็ม 20)</text>
+
+    <!-- spatial_correct -->
+    <line x1="0" y1="242" x2="430" y2="242" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="262" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="262" font-size="12" font-weight="600" fill="#f1f5f9">spatial_correct</text>
+    <text x="250" y="262" font-size="12" fill="#cbd5e1">คะแนนพาร์ตมิติสัมพันธ์ (เต็ม 20)</text>
+
+    <!-- logical_correct -->
+    <line x1="0" y1="272" x2="430" y2="272" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="292" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="292" font-size="12" font-weight="600" fill="#f1f5f9">logical_correct</text>
+    <text x="250" y="292" font-size="12" fill="#cbd5e1">คะแนนพาร์ตเหตุผล (เต็ม 20)</text>
+
+    <!-- created_at -->
+    <line x1="0" y1="302" x2="430" y2="302" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="322" font-size="11" fill="#94a3b8" font-family="monospace">timestamptz</text>
+    <text x="85" y="322" font-size="12" font-weight="600" fill="#f1f5f9">created_at</text>
+    <text x="250" y="322" font-size="12" fill="#cbd5e1">เวลาที่ส่งข้อสอบประมวลผล</text>
+  </g>
+
+  <!-- ==================== TABLE 4: QUESTIONS ==================== -->
+  <g transform="translate(770, 360)" filter="url(#cardGlow)">
+    <rect width="470" height="470" rx="8" fill="#131b2e" stroke="#0284c7" stroke-width="1.8" />
+    <!-- Header -->
+    <path d="M 0 8 Q 0 0 8 0 L 462 0 Q 470 0 470 8 L 470 38 L 0 38 Z" fill="#1e293b" />
+    <text x="235" y="25" text-anchor="middle" font-size="15" font-weight="bold" fill="#38bdf8" letter-spacing="1">QUESTIONS (คลังข้อสอบ 80 ข้อ)</text>
+    <line x1="0" y1="38" x2="470" y2="38" stroke="#334155" stroke-width="1" />
+
+    <!-- Columns Header -->
+    <rect x="0" y="38" width="470" height="22" fill="#0f172a" />
+    <text x="15" y="53" font-size="11" font-weight="bold" fill="#64748b">TYPE</text>
+    <text x="85" y="53" font-size="11" font-weight="bold" fill="#64748b">COLUMN</text>
+    <text x="180" y="53" font-size="11" font-weight="bold" fill="#64748b">KEY</text>
+    <text x="235" y="53" font-size="11" font-weight="bold" fill="#64748b">DESCRIPTION</text>
+    <line x1="0" y1="60" x2="470" y2="60" stroke="#1e293b" stroke-width="1" />
+
+    <!-- id -->
+    <text x="15" y="82" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="82" font-size="12" font-weight="600" fill="#f1f5f9">id</text>
+    <rect x="175" y="70" width="28" height="16" rx="4" fill="#1d4ed8" />
+    <text x="189" y="82" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">PK</text>
+    <text x="235" y="82" font-size="12" fill="#cbd5e1">ลำดับข้อสอบ 1 - 80</text>
+
+    <!-- topic_id -->
+    <line x1="0" y1="92" x2="470" y2="92" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="112" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="112" font-size="12" font-weight="600" fill="#f1f5f9">topic_id</text>
+    <rect x="175" y="100" width="28" height="16" rx="4" fill="#059669" />
+    <text x="189" y="112" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">FK</text>
+    <text x="235" y="112" font-size="12" fill="#cbd5e1">FK -&gt; QUESTION_TOPICS.id (1-16)</text>
+
+    <!-- content -->
+    <line x1="0" y1="122" x2="470" y2="122" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="142" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="142" font-size="12" font-weight="600" fill="#f1f5f9">content</text>
+    <text x="235" y="142" font-size="12" fill="#cbd5e1">ข้อความโจทย์คำถาม</text>
+
+    <!-- choice_1 -->
+    <line x1="0" y1="152" x2="470" y2="152" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="172" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="172" font-size="12" font-weight="600" fill="#f1f5f9">choice_1</text>
+    <text x="235" y="172" font-size="12" fill="#cbd5e1">ตัวเลือกที่ 1 (ก)</text>
+
+    <!-- choice_2 -->
+    <line x1="0" y1="182" x2="470" y2="182" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="202" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="202" font-size="12" font-weight="600" fill="#f1f5f9">choice_2</text>
+    <text x="235" y="202" font-size="12" fill="#cbd5e1">ตัวเลือกที่ 2 (ข)</text>
+
+    <!-- choice_3 -->
+    <line x1="0" y1="212" x2="470" y2="212" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="232" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="232" font-size="12" font-weight="600" fill="#f1f5f9">choice_3</text>
+    <text x="235" y="232" font-size="12" fill="#cbd5e1">ตัวเลือกที่ 3 (ค)</text>
+
+    <!-- choice_4 -->
+    <line x1="0" y1="242" x2="470" y2="242" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="262" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="262" font-size="12" font-weight="600" fill="#f1f5f9">choice_4</text>
+    <text x="235" y="262" font-size="12" fill="#cbd5e1">ตัวเลือกที่ 4 (ง)</text>
+
+    <!-- choice_5 -->
+    <line x1="0" y1="272" x2="470" y2="272" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="292" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="292" font-size="12" font-weight="600" fill="#f1f5f9">choice_5</text>
+    <text x="235" y="292" font-size="12" fill="#cbd5e1">ตัวเลือกที่ 5 (จ)</text>
+
+    <!-- correct_choice -->
+    <line x1="0" y1="302" x2="470" y2="302" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="322" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="322" font-size="12" font-weight="600" fill="#f1f5f9">correct_choice</text>
+    <text x="235" y="322" font-size="12" fill="#cbd5e1">ตัวเลือกที่ถูกต้อง (1-5)</text>
+
+    <!-- explanation -->
+    <line x1="0" y1="332" x2="470" y2="332" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="352" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="352" font-size="12" font-weight="600" fill="#f1f5f9">explanation</text>
+    <text x="235" y="352" font-size="12" fill="#cbd5e1">เฉลยวิธีคิดและคำอธิบายละเอียด</text>
+
+    <!-- image -->
+    <line x1="0" y1="362" x2="470" y2="362" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="382" font-size="12" fill="#94a3b8" font-family="monospace">string</text>
+    <text x="85" y="382" font-size="12" font-weight="600" fill="#f1f5f9">image</text>
+    <text x="235" y="382" font-size="12" fill="#cbd5e1">CDN URL ภาพโจทย์มิติสัมพันธ์</text>
+  </g>
+
+  <!-- ==================== TABLE 5: TEST_ANSWERS ==================== -->
+  <g transform="translate(420, 890)" filter="url(#cardGlow)">
+    <rect width="480" height="230" rx="8" fill="#131b2e" stroke="#ec4899" stroke-width="1.8" />
+    <!-- Header -->
+    <path d="M 0 8 Q 0 0 8 0 L 472 0 Q 480 0 480 8 L 480 38 L 0 38 Z" fill="#1e293b" />
+    <text x="240" y="25" text-anchor="middle" font-size="15" font-weight="bold" fill="#f472b6" letter-spacing="1">TEST_ANSWERS (คำตอบรายข้อ)</text>
+    <line x1="0" y1="38" x2="480" y2="38" stroke="#334155" stroke-width="1" />
+
+    <!-- Columns Header -->
+    <rect x="0" y="38" width="480" height="22" fill="#0f172a" />
+    <text x="15" y="53" font-size="11" font-weight="bold" fill="#64748b">TYPE</text>
+    <text x="85" y="53" font-size="11" font-weight="bold" fill="#64748b">COLUMN</text>
+    <text x="210" y="53" font-size="11" font-weight="bold" fill="#64748b">KEY</text>
+    <text x="265" y="53" font-size="11" font-weight="bold" fill="#64748b">DESCRIPTION</text>
+    <line x1="0" y1="60" x2="480" y2="60" stroke="#1e293b" stroke-width="1" />
+
+    <!-- id -->
+    <text x="15" y="82" font-size="12" fill="#94a3b8" font-family="monospace">uuid</text>
+    <text x="85" y="82" font-size="12" font-weight="600" fill="#f1f5f9">id</text>
+    <rect x="205" y="70" width="28" height="16" rx="4" fill="#1d4ed8" />
+    <text x="219" y="82" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">PK</text>
+    <text x="265" y="82" font-size="12" fill="#cbd5e1">Primary Key</text>
+
+    <!-- test_event_id -->
+    <line x1="0" y1="92" x2="480" y2="92" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="112" font-size="12" fill="#94a3b8" font-family="monospace">uuid</text>
+    <text x="85" y="112" font-size="12" font-weight="600" fill="#f1f5f9">test_event_id</text>
+    <rect x="205" y="100" width="28" height="16" rx="4" fill="#059669" />
+    <text x="219" y="112" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">FK</text>
+    <text x="265" y="112" font-size="12" fill="#cbd5e1">FK -&gt; TEST_EVENTS.id</text>
+
+    <!-- question_id -->
+    <line x1="0" y1="122" x2="480" y2="122" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="142" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="142" font-size="12" font-weight="600" fill="#f1f5f9">question_id</text>
+    <rect x="205" y="130" width="28" height="16" rx="4" fill="#059669" />
+    <text x="219" y="142" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">FK</text>
+    <text x="265" y="142" font-size="12" fill="#cbd5e1">FK -&gt; QUESTIONS.id</text>
+
+    <!-- selected_choice -->
+    <line x1="0" y1="152" x2="480" y2="152" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="172" font-size="12" fill="#94a3b8" font-family="monospace">int</text>
+    <text x="85" y="172" font-size="12" font-weight="600" fill="#f1f5f9">selected_choice</text>
+    <text x="265" y="172" font-size="12" fill="#cbd5e1">ช้อยส์ที่ผู้สอบเลือก (1-5)</text>
+
+    <!-- is_correct -->
+    <line x1="0" y1="182" x2="480" y2="182" stroke="#1e293b" stroke-width="1" />
+    <text x="15" y="202" font-size="12" fill="#94a3b8" font-family="monospace">boolean</text>
+    <text x="85" y="202" font-size="12" font-weight="600" fill="#f1f5f9">is_correct</text>
+    <text x="265" y="202" font-size="12" fill="#cbd5e1">ตอบถูกหรือไม่ (true / false)</text>
+  </g>
+
+  <!-- Legend at Bottom -->
+  <g transform="translate(60, 1140)">
+    <text x="0" y="12" font-size="12" fill="#94a3b8" font-weight="bold">สัญลักษณ์:</text>
+    <rect x="70" y="0" width="26" height="16" rx="3" fill="#1d4ed8" />
+    <text x="83" y="12" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">PK</text>
+    <text x="105" y="12" font-size="12" fill="#cbd5e1">Primary Key</text>
+
+    <rect x="200" y="0" width="26" height="16" rx="3" fill="#059669" />
+    <text x="213" y="12" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">FK</text>
+    <text x="235" y="12" font-size="12" fill="#cbd5e1">Foreign Key</text>
+
+    <rect x="330" y="0" width="26" height="16" rx="3" fill="#d97706" />
+    <text x="343" y="12" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">UK</text>
+    <text x="365" y="12" font-size="12" fill="#cbd5e1">Unique Key</text>
+
+    <line x1="470" y1="8" x2="520" y2="8" stroke="#38bdf8" stroke-width="2" />
+    <text x="530" y="12" font-size="12" fill="#cbd5e1">Crow's Foot 1:N Relationship</text>
+  </g>
+</svg>
