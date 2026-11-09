@@ -8,14 +8,21 @@
 import { NextResponse } from 'next/server';
 import { loginUser } from '@/lib/examEngine';
 import { loginUserInSupabase } from '@/lib/supabase';
+import { verifyPassword } from '@/lib/password';
 
 export async function POST(request) {
+  let body;
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'รูปแบบข้อมูลไม่ถูกต้อง' }, { status: 400 });
+  }
+
+  try {
+    const { email, password } = body || {};
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if (!email || !password) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return NextResponse.json(
         { error: 'กรุณากรอกอีเมลและรหัสผ่าน' },
         { status: 400 }
@@ -23,13 +30,13 @@ export async function POST(request) {
     }
 
     // 1. ตรวจสอบข้อมูลผู้ใช้กับ Supabase Table 'users' ก่อนเป็นอันดับ 1
-    const supabaseResult = await loginUserInSupabase(email, password);
+    const supabaseResult = await loginUserInSupabase(email, password, verifyPassword);
 
     if (supabaseResult?.error) {
       return NextResponse.json({ error: supabaseResult.error }, { status: 401 });
     }
 
-    // 2. สำรองข้อมูล / Demo fallback
+    // 2. สำรองข้อมูล (เมื่อ Supabase ใช้งานไม่ได้) — ตรวจรหัสผ่านเช่นกัน
     const user = supabaseResult || loginUser(email, password);
 
     if (user.error) {

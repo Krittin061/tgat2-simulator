@@ -92,6 +92,7 @@
 
 ### 4. ระบบสมาชิกและประวัติการสอบ (Authentication & History)
 - ระบบลงทะเบียน (Register) และเข้าสู่ระบบ (Login) บันทึกลงในฐานข้อมูล Supabase Cloud
+- รหัสผ่านถูกแฮชด้วย scrypt ก่อนบันทึก (บัญชีเก่าที่เก็บแบบข้อความธรรมดายังเข้าสู่ระบบได้)
 - สามารถเข้าสอบแบบ Guest ได้ทันทีโดยไม่ต้องเข้าสู่ระบบ
 - บันทึกประวัติการทำข้อสอบลงฐานข้อมูลอัตโนมัติเมื่อสอบเสร็จ
 
@@ -108,7 +109,13 @@ cd "tgat2-simulator"
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://gcdjeudviekotstbujuh.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+# ใช้ฝั่ง Server เท่านั้น (ห้ามขึ้นต้นด้วย NEXT_PUBLIC_) — สำหรับตาราง users
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 ```
+   - `SUPABASE_SERVICE_ROLE_KEY` อยู่ที่ Supabase > Project Settings > API > `service_role`
+   - ต้องตั้งค่าเดียวกันใน Vercel (Project Settings > Environment Variables) ด้วย
+   - เมื่อตั้งค่าแล้ว ให้รัน `supabase/secure_policies.sql` ใน SQL Editor เพื่อปิดสิทธิ์สาธารณะในการอ่าน/แก้ตาราง `users` และการแก้ข้อสอบ (ต้องทำทั้งสองอย่างคู่กัน)
+   - ถ้าติดต่อ Supabase ไม่ได้ ระบบจะใช้ข้อสอบจากไฟล์ในเครื่องและบัญชีสำรองในหน่วยความจำ Server อัตโนมัติ (ไม่ค้าง)
 
 3. ติดตั้ง Dependencies (ถ้ายังไม่ได้ติดตั้ง):
 ```bash

@@ -11,6 +11,7 @@
 
 import { TGAT2_QUESTIONS, SCORE_PER_QUESTION, MAX_EXAM_SCORE, EXAM_DURATION_SECONDS } from '@/data/tgat2Questions';
 import { SKILL_METADATA, TGAT2_BLUEPRINT, SUBTOPIC_MAP, getQuestionSubtopicId } from '@/types/exam';
+import { hashPassword, verifyPassword } from '@/lib/password';
 
 // เก็บ session ไว้ใน memory ของ server (ใช้ Map เพื่อค้นหาเร็ว)
 // หมายเหตุ: ใน production ควรใช้ Redis หรือ Database แทน
@@ -21,6 +22,11 @@ const users = new Map();
 
 // เก็บประวัติการสอบ
 const examHistory = new Map();
+
+// รหัสรอบสอบจริงที่ส่งไปแล้ว (กันการส่งซ้ำ)
+const submittedSessionIds = new Set();
+
+const QUESTION_BY_ID = new Map(TGAT2_QUESTIONS.map(q => [q.id, q]));
 
 /**
  * ฟังก์ชัน: shuffleArray
@@ -323,17 +329,32 @@ export function createPracticeQuestions(sourceQuestions = TGAT2_QUESTIONS, optio
  * @param {string} sessionId - รหัส session ของรอบสอบนี้
  * @param {Object} answers - คำตอบ { questionId: choiceId }
  * @param {number} timeSpentSeconds - เวลาที่ใช้ (วินาที)
+ * @param {Object} options - { userId, questionIds } (questionIds = ข้อที่ทำในโหมดฝึกหัด ตามลำดับที่แสดง)
  * @returns {Object} ผลคะแนนพร้อมเฉลยละเอียดและบทวิเคราะห์จุดแข็งจุดอ่อน
  */
-export function submitExam(sessionId, answers, timeSpentSeconds) {
+export function submitExam(sessionId, answers, timeSpentSeconds, options = {}) {
+  const isRealExam = isRealExamSession(sessionId);
+
+  // รอบสอบจริงส่งได้ครั้งเดียว (session ถูกลบหลังส่ง จึงต้องจำรหัสที่ส่งแล้วไว้แยก
+  // ไม่เช่นนั้นการส่งซ้ำจะตกไปที่เฉลยสำรองและถูกบันทึกเป็นผลสอบใหม่)
+  if (isRealExam && submittedSessionIds.has(sessionId)) {
+    return { error: 'รอบสอบนี้ถูกส่งไปแล้ว ไม่สามารถส่งซ้ำได้' };
+  }
+
   let session = activeSessions.get(sessionId);
 
   // ตรวจสอบว่า session มีอยู่ในหน่วยความจำหรือไม่ หากไม่มีให้สร้างเฉลยสำรองจากคลังข้อสอบหลัก
   if (!session) {
+    // โหมดฝึกหัด: ตรวจเฉพาะข้อที่ผู้ใช้ฝึก (เดิมคิดคะแนนจากทั้ง 80 ข้อ ฝึก 5 ข้อถูกหมดได้แค่ 6.25/100)
+    const practiceIds = !isRealExam && Array.isArray(options.questionIds)
+      ? options.questionIds.map(Number).filter(id => QUESTION_BY_ID.has(id))
+      : [];
+    const pool = practiceIds.length > 0 ? practiceIds.map(id => QUESTION_BY_ID.get(id)) : TGAT2_QUESTIONS;
+
     // รอบสอบจริงสุ่มช้อยส์ด้วย seed จาก sessionId จึงคำนวณลำดับช้อยส์เดิมกลับมาได้
     const fallbackAnswerKey = {};
-    TGAT2_QUESTIONS.forEach((q, index) => {
-      const asShown = isRealExamSession(sessionId) ? shuffleChoicesForSession(q, sessionId) : q;
+    pool.forEach((q, index) => {
+      const asShown = isRealExam ? shuffleChoicesForSession(q, sessionId) : q;
       fallbackAnswerKey[q.id] = {
         correctAnswer: asShown.correctAnswer,
         choiceMap: asShown.choiceMap || null,
@@ -346,12 +367,11 @@ export function submitExam(sessionId, answers, timeSpentSeconds) {
 
     session = {
       sessionId,
-      userId: 'anonymous',
+      userId: options.userId || 'anonymous',
       answerKey: fallbackAnswerKey,
-      questionOrder: Object.keys(fallbackAnswerKey).map(Number),
+      questionOrder: pool.map(q => q.id),
       isSubmitted: false
     };
-    activeSessions.set(sessionId, session);
   }
 
   if (session.isSubmitted) {
@@ -359,6 +379,7 @@ export function submitExam(sessionId, answers, timeSpentSeconds) {
   }
 
   session.isSubmitted = true;
+  if (isRealExam) submittedSessionIds.add(sessionId);
 
   const answerKey = session.answerKey;
   let correctCount = 0;
@@ -503,7 +524,8 @@ export function submitExam(sessionId, answers, timeSpentSeconds) {
   const result = {
     id: resultId,
     sessionId,
-    mode: 'real_exam',
+    userId: session.userId || 'anonymous',
+    mode: isRealExam ? 'real_exam' : 'practice',
     totalScore,
     maxScore: MAX_EXAM_SCORE,
     correctCount,
@@ -543,21 +565,24 @@ export function getSession(sessionId) {
  * หน้าที่: จัดการผู้ใช้จำลอง (ในระบบจริงจะเชื่อมต่อ Database)
  */
 export function registerUser(name, email, password) {
-  if (users.has(email)) {
+  const key = email.trim().toLowerCase();
+  if (users.has(key)) {
     return { error: 'อีเมลนี้ถูกใช้สมัครแล้ว' };
   }
-  const userId = `user_${Date.now()}`;
-  users.set(email, { userId, name, email, password, createdAt: new Date().toISOString() });
-  return { userId, name, email };
+  const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  users.set(key, { userId, name, email: key, passwordHash: hashPassword(password), createdAt: new Date().toISOString() });
+  return { userId, name, email: key };
 }
 
+// เดิมระบบสำรองนี้ไม่ตรวจรหัสผ่าน และสร้างบัญชีให้อัตโนมัติเมื่อไม่พบอีเมล
+// ทำให้ใครก็เข้าสู่ระบบเป็นบัญชีอื่นได้ด้วยรหัสผ่านใดก็ได้
 export function loginUser(email, password) {
-  const user = users.get(email);
+  const user = users.get(email.trim().toLowerCase());
   if (!user) {
-    const userId = `user_${Date.now()}`;
-    const newUser = { userId, name: email.split('@')[0], email, password, createdAt: new Date().toISOString() };
-    users.set(email, newUser);
-    return { userId, name: newUser.name, email };
+    return { error: 'ไม่พบบัญชีผู้ใช้นี้ในระบบ' };
+  }
+  if (!verifyPassword(password, user.passwordHash)) {
+    return { error: 'รหัสผ่านไม่ถูกต้อง' };
   }
   return { userId: user.userId, name: user.name, email: user.email };
 }

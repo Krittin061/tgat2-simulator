@@ -10,7 +10,8 @@ import { getResultById } from '@/lib/examEngine';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    // Next.js 15+: params เป็น Promise ต้อง await ก่อนใช้ (เดิมได้ id = undefined จึงตอบ 404 เสมอ)
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || 'anonymous';
 

@@ -11,23 +11,43 @@ import { NextResponse } from 'next/server';
 import { submitExam } from '@/lib/examEngine';
 
 export async function POST(request) {
+  let body;
   try {
-    const body = await request.json();
-    const { sessionId, answers, timeSpentSeconds } = body;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'รูปแบบข้อมูลไม่ถูกต้อง' }, { status: 400 });
+  }
+
+  try {
+    const { sessionId, answers, timeSpentSeconds, userId, questionIds } = body || {};
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if (!sessionId) {
+    if (!sessionId || typeof sessionId !== 'string') {
       return NextResponse.json(
         { error: 'ไม่พบรหัสรอบสอบ (sessionId)' },
         { status: 400 }
       );
     }
 
+    // รับเฉพาะคำตอบที่เป็นรูปแบบ { รหัสข้อ: เลขตัวเลือก 1-5 }
+    const cleanAnswers = {};
+    if (answers && typeof answers === 'object' && !Array.isArray(answers)) {
+      for (const [qId, choice] of Object.entries(answers)) {
+        if (/^\d+$/.test(qId) && Number.isInteger(choice) && choice >= 1 && choice <= 5) {
+          cleanAnswers[qId] = choice;
+        }
+      }
+    }
+
     // ตรวจคำตอบฝั่ง Server
     const result = submitExam(
       sessionId,
-      answers || {},
-      timeSpentSeconds || 0
+      cleanAnswers,
+      Number.isFinite(timeSpentSeconds) && timeSpentSeconds > 0 ? Math.round(timeSpentSeconds) : 0,
+      {
+        userId: typeof userId === 'string' && userId ? userId : undefined,
+        questionIds: Array.isArray(questionIds) ? questionIds : undefined
+      }
     );
 
     // ตรวจว่ามี error หรือไม่

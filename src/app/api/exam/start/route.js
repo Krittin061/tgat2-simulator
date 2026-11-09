@@ -15,6 +15,10 @@ export async function GET(request) {
     const userId = searchParams.get('userId') || 'anonymous';
     const mode = searchParams.get('mode') || 'real_exam';
 
+    if (mode !== 'real_exam' && mode !== 'practice') {
+      return NextResponse.json({ error: 'โหมดการสอบไม่ถูกต้อง' }, { status: 400 });
+    }
+
     // 1. ดึงข้อสอบสด ๆ จาก Supabase Table 'questions' (หากมี)
     const supabaseQuestions = await fetchQuestionsFromSupabase();
     const sourceQuestions = (supabaseQuestions && supabaseQuestions.length > 0)
