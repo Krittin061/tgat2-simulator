@@ -6,13 +6,13 @@
  * ธีม: ทางการ (Professional White/Navy)
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { 
   PlayCircle, FileText, History, Trophy, Clock, ArrowRight, 
-  ShieldCheck, CheckSquare, Square, 
-  CheckCircle2, Target, Filter, ChevronDown, ChevronRight
+  ShieldCheck, CheckCircle2, Target, Filter
 } from 'lucide-react';
 import { TGAT2_BLUEPRINT } from '@/types/exam';
+import { PracticeTopicModal } from '@/components/PracticeTopicModal';
 
 export function DashboardView({ user, history = [], onStartExam, onViewResult }) {
   const [activeTab, setActiveTab] = useState('exam'); // 'exam' | 'history'
@@ -25,87 +25,7 @@ export function DashboardView({ user, history = [], onStartExam, onViewResult })
     TGAT2_BLUEPRINT.map(st => st.id)
   );
 
-  // ควบคุมการย่อ/ขยายของแต่ละหมวดเพื่อดูหัวข้อย่อย
-  const [expandedSkills, setExpandedSkills] = useState({
-    verbal: false,
-    numerical: false,
-    spatial: false,
-    logical: false
-  });
-
-  // ข้อมูลหมวดวิชาหลัก TGAT2 ทั้ง 4 ด้าน
-  const skillOptions = [
-    { 
-      id: 'verbal', 
-      no: 1, 
-      name: 'ความสามารถทางภาษา', 
-      range: 'ข้อ 1 - 20',
-      desc: 'การสื่อความหมาย (1-5), การใช้ภาษา (6-10), การอ่าน (11-15), การเข้าใจสาร (16-20)', 
-      color: '#3B82F6' 
-    },
-    { 
-      id: 'numerical', 
-      no: 2, 
-      name: 'ความสามารถทางตัวเลข', 
-      range: 'ข้อ 21 - 40',
-      desc: 'อนุกรมมิติ (21-25), สดมภ์ (26-30), ความเพียงพอของข้อมูล (31-35), โจทย์ปัญหา (36-40)', 
-      color: '#10B981' 
-    },
-    { 
-      id: 'spatial', 
-      no: 3, 
-      name: 'ความสามารถทางมิติสัมพันธ์', 
-      range: 'ข้อ 41 - 60',
-      desc: 'พับกล่อง (41-45), รูปทรงเรขาคณิต (46-50), หมุนภาพ 3D (51-55), ประกอบภาพ (56-60)', 
-      color: '#8B5CF6' 
-    },
-    { 
-      id: 'logical', 
-      no: 4, 
-      name: 'ความสามารถทางเหตุผล', 
-      range: 'ข้อ 61 - 80',
-      desc: 'อนุกรมภาพ (61-65), ความสัมพันธ์ของภาพ (66-70), เงื่อนไขสัญลักษณ์ (71-75), เงื่อนไขสถานการณ์ (76-80)', 
-      color: '#F59E0B' 
-    }
-  ];
-
-  const toggleSkillExpand = (skillId, e) => {
-    e.stopPropagation();
-    setExpandedSkills(prev => ({
-      ...prev,
-      [skillId]: !prev[skillId]
-    }));
-  };
-
-  const toggleSkillSelection = (skillId) => {
-    const subtopicsOfSkill = TGAT2_BLUEPRINT.filter(st => st.skill === skillId).map(st => st.id);
-    const allSelected = subtopicsOfSkill.every(id => selectedSubtopics.includes(id));
-
-    if (allSelected) {
-      // เอาออกทั้งหมดของหมวดนี้
-      setSelectedSubtopics(prev => prev.filter(id => !subtopicsOfSkill.includes(id)));
-    } else {
-      // เลือกทั้งหมดของหมวดนี้
-      setSelectedSubtopics(prev => Array.from(new Set([...prev, ...subtopicsOfSkill])));
-    }
-  };
-
-  const toggleSubtopic = (subtopicId, e) => {
-    e.stopPropagation();
-    setSelectedSubtopics(prev => 
-      prev.includes(subtopicId)
-        ? prev.filter(id => id !== subtopicId)
-        : [...prev, subtopicId]
-    );
-  };
-
-  const selectAll = () => {
-    setSelectedSubtopics(TGAT2_BLUEPRINT.map(st => st.id));
-  };
-
-  const clearAll = () => {
-    setSelectedSubtopics([]);
-  };
+  const closePracticeModal = useCallback(() => setShowPracticeModal(false), []);
 
   const latestAttempt = history.length > 0 ? history[0] : null;
 
@@ -357,254 +277,16 @@ export function DashboardView({ user, history = [], onStartExam, onViewResult })
       </div>
 
       {/* PRACTICE MODE MODAL - เลือกระดับหมวดวิชาหรือหัวข้อย่อย */}
-      {showPracticeModal && (
-        <div className="modal-overlay">
-          <div className="modal-card animate-scale-in" style={{ padding: '0', overflow: 'hidden', maxWidth: '580px', width: '92%' }}>
-            {/* Header */}
-            <div style={{ 
-              padding: '20px 24px 16px', 
-              background: 'linear-gradient(135deg, #0B192E 0%, #172E54 100%)', 
-              color: '#FFFFFF',
-              flexShrink: 0
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                <div style={{
-                  padding: '6px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255,255,255,0.15)'
-                }}>
-                  <Filter size={20} color="#38BDF8" />
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-                  เลือกหัวข้อสำหรับโหมดฝึกหัด
-                </h3>
-              </div>
-              <p style={{ color: '#93C5FD', fontSize: '0.85rem', margin: 0 }}>
-                เลือกฝึกทั้งหมวดวิชา หรือคลิกเพื่อเลือกเฉพาะหัวข้อย่อย (ข้อสอบเรียงลำดับตามพิมพ์เขียว)
-              </p>
-            </div>
-
-            {/* Quick Actions */}
-            <div style={{ 
-              padding: '12px 24px', 
-              background: 'var(--color-bg-alt)', 
-              borderBottom: '1px solid var(--color-border)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexShrink: 0,
-              flexWrap: 'wrap',
-              gap: '8px'
-            }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                เลือกแล้ว: <strong style={{ color: 'var(--color-primary)' }}>{selectedSubtopics.length}</strong> จาก 16 หัวข้อย่อย 
-                ({selectedSubtopics.length * 5} ข้อ)
-              </span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={selectAll}
-                  style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 700, padding: '4px 8px' }}
-                >
-                  เลือกทั้งหมด
-                </button>
-                <button 
-                  onClick={clearAll}
-                  style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, padding: '4px 8px' }}
-                >
-                  ล้างการเลือก
-                </button>
-              </div>
-            </div>
-
-            {/* Subtopic Checklist with Expandable Categories */}
-            <div style={{ 
-              padding: '18px 24px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '12px',
-              overflowY: 'auto',
-              flex: '1 1 auto',
-              maxHeight: '52vh'
-            }}>
-              {skillOptions.map(skill => {
-                const subtopicsOfSkill = TGAT2_BLUEPRINT.filter(st => st.skill === skill.id);
-                const selectedInSkill = subtopicsOfSkill.filter(st => selectedSubtopics.includes(st.id));
-                const isAllSelected = selectedInSkill.length === subtopicsOfSkill.length;
-                const isPartiallySelected = selectedInSkill.length > 0 && !isAllSelected;
-                const isExpanded = expandedSkills[skill.id];
-
-                return (
-                  <div
-                    key={skill.id}
-                    style={{
-                      borderRadius: 'var(--radius-md)',
-                      border: `1.5px solid ${isAllSelected || isPartiallySelected ? skill.color : 'var(--color-border)'}`,
-                      background: isAllSelected ? `${skill.color}0D` : 'var(--color-bg)',
-                      overflow: 'hidden',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {/* Skill Header */}
-                    <div
-                      onClick={() => toggleSkillSelection(skill.id)}
-                      style={{
-                        padding: '12px 14px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '12px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexGrow: 1 }}>
-                        <div style={{ color: isAllSelected ? skill.color : isPartiallySelected ? skill.color : '#CBD5E1' }}>
-                          {isAllSelected ? (
-                            <CheckSquare size={20} />
-                          ) : isPartiallySelected ? (
-                            <div style={{
-                              width: '20px', height: '20px',
-                              border: `2px solid ${skill.color}`,
-                              borderRadius: '4px',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: `${skill.color}20`
-                            }}>
-                              <div style={{ width: '8px', height: '8px', background: skill.color, borderRadius: '2px' }} />
-                            </div>
-                          ) : (
-                            <Square size={20} />
-                          )}
-                        </div>
-
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--color-navy)' }}>
-                              หมวด {skill.no}: {skill.name}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                              ({skill.range})
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                            เลือกแล้ว {selectedInSkill.length}/4 หัวข้อย่อย ({selectedInSkill.length * 5} ข้อ)
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => toggleSkillExpand(skill.id, e)}
-                        style={{
-                          background: 'var(--color-bg-alt)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '4px 8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: 'var(--color-text-secondary)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isExpanded ? 'ย่อ' : 'ดูหัวข้อย่อย'}
-                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </button>
-                    </div>
-
-                    {/* Subtopics List when expanded */}
-                    {isExpanded && (
-                      <div style={{
-                        padding: '10px 14px 14px',
-                        borderTop: '1px solid var(--color-border)',
-                        background: 'var(--color-bg-alt)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px'
-                      }}>
-                        {subtopicsOfSkill.map(sub => {
-                          const isSubSelected = selectedSubtopics.includes(sub.id);
-                          return (
-                            <div
-                              key={sub.id}
-                              onClick={(e) => toggleSubtopic(sub.id, e)}
-                              style={{
-                                padding: '8px 12px',
-                                borderRadius: 'var(--radius-sm)',
-                                background: isSubSelected ? '#FFFFFF' : 'var(--color-bg)',
-                                border: `1px solid ${isSubSelected ? skill.color : 'var(--color-border)'}`,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: '10px',
-                                transition: 'all 0.12s ease'
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ color: isSubSelected ? skill.color : '#94A3B8' }}>
-                                  {isSubSelected ? <CheckSquare size={16} /> : <Square size={16} />}
-                                </div>
-                                <div>
-                                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-navy)' }}>
-                                    {sub.name}
-                                  </span>
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '6px' }}>
-                                    ({sub.range})
-                                  </span>
-                                  <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
-                                    {sub.description}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <span style={{
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                color: isSubSelected ? skill.color : 'var(--color-text-muted)',
-                                background: isSubSelected ? `${skill.color}15` : 'transparent',
-                                padding: '2px 6px',
-                                borderRadius: '4px'
-                              }}>
-                                5 ข้อ
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Footer */}
-            <div className="modal-btn-group">
-              <button 
-                onClick={() => setShowPracticeModal(false)}
-                className="btn-outline modal-btn-cancel"
-              >
-                ยกเลิก
-              </button>
-              <button 
-                onClick={() => {
-                  if (selectedSubtopics.length === 0) return;
-                  setShowPracticeModal(false);
-                  onStartExam('practice', { subtopics: selectedSubtopics });
-                }}
-                disabled={selectedSubtopics.length === 0}
-                className="btn-primary modal-btn-confirm"
-                style={{ 
-                  opacity: selectedSubtopics.length === 0 ? 0.5 : 1,
-                  cursor: selectedSubtopics.length === 0 ? 'not-allowed' : 'pointer'
-                }}
-              >
-                เริ่มฝึกทำโจทย์ ({selectedSubtopics.length * 5} ข้อ) <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PracticeTopicModal
+        open={showPracticeModal}
+        selected={selectedSubtopics}
+        onChange={setSelectedSubtopics}
+        onClose={closePracticeModal}
+        onStart={async (subtopics) => {
+          await onStartExam('practice', { subtopics });
+          setShowPracticeModal(false);
+        }}
+      />
 
       {/* START EXAM GUIDELINES MODAL */}
       {showStartModal && (
