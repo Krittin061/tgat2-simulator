@@ -4,9 +4,16 @@ import { numericalQuestions } from '../src/data/questions/numerical.js';
 import { spatialQuestions } from '../src/data/questions/spatial.js';
 import { logicalQuestions } from '../src/data/questions/logical.js';
 
-const url = 'https://gcdjeudviekotstbujuh.supabase.co';
-const anonKey = 'sb_publishable_vr8T5vdoiDwfeEMthJY3qQ_WWcCioXe';
-const supabase = createClient(url, anonKey);
+// ใช้ SUPABASE_SERVICE_ROLE_KEY (Supabase > Project Settings > API > service_role)
+// เพราะหลังรัน supabase/secure_auth.sql แล้ว anon key ไม่มีสิทธิ์เขียนข้อมูลนี้
+// ตัวอย่าง: SUPABASE_SERVICE_ROLE_KEY=... node scripts/<ชื่อไฟล์>.mjs
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gcdjeudviekotstbujuh.supabase.co';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!serviceKey) {
+  console.error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable.');
+  process.exit(1);
+}
+const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
 
 async function main() {
   const allQuestions = [

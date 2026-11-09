@@ -194,115 +194,51 @@ export async function fetchQuestionsFromSupabase() {
 }
 
 // ---------------------------------------------------------------------------
-// Client ฝั่ง Server สำหรับตาราง users (ข้อมูลบัญชีผู้ใช้)
-// ถ้าตั้งค่า SUPABASE_SERVICE_ROLE_KEY (ไม่ขึ้นต้นด้วย NEXT_PUBLIC_ จึงไม่ถูกส่งไปเบราว์เซอร์)
-// จะใช้คีย์นี้ เพื่อให้ปิดสิทธิ์อ่าน/แก้ตาราง users จากสาธารณะได้ (ดู supabase/secure_policies.sql)
+// บัญชีผู้ใช้: ตรวจรหัสผ่านภายในฐานข้อมูลผ่านฟังก์ชัน register_user / login_user
+// (bcrypt ด้วย pgcrypto, SECURITY DEFINER — ดู supabase/secure_auth.sql)
+// แอปจึงไม่ต้องอ่านตาราง users โดยตรง และปิดสิทธิ์สาธารณะของตารางนี้ได้ทั้งหมด
 // ---------------------------------------------------------------------------
-let cachedServerClient = null;
+const AUTH_ERROR_MESSAGES = {
+  email_taken: 'อีเมลนี้ถูกใช้สมัครสมาชิกแล้ว',
+  not_found: 'ไม่พบบัญชีผู้ใช้นี้ในระบบ',
+  wrong_password: 'รหัสผ่านไม่ถูกต้อง',
+  invalid_input: 'ข้อมูลไม่ครบหรือไม่ถูกต้อง'
+};
 
-function getServerAuthClient() {
-  const serviceKey = typeof window === 'undefined' ? process.env.SUPABASE_SERVICE_ROLE_KEY : undefined;
-  if (!serviceKey) return getSupabaseClient();
-
-  const { url } = getSupabaseCredentials();
-  if (!url || isSupabaseTemporarilyUnavailable()) return null;
-  if (!cachedServerClient) {
-    cachedServerClient = createClient(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { fetch: fetchWithTimeout },
-      db: { retry: false }
-    });
-  }
-  return cachedServerClient;
-}
-
-/**
- * สมัครสมาชิกผู้ใช้ใหม่ลงใน Supabase Table 'users'
- * @param {string} passwordHash - รหัสผ่านที่แฮชแล้ว (ห้ามส่งรหัสผ่านจริง)
- */
-export async function registerUserInSupabase(name, email, passwordHash) {
-  const supabase = getServerAuthClient();
+async function callAuthFunction(fnName, args) {
+  const supabase = getSupabaseClient();
   if (!supabase) return null;
 
   try {
-    const cleanEmail = email.trim().toLowerCase();
-
-    // 1. ตรวจสอบว่ามีอีเมลนี้อยู่แล้วหรือไม่
-    const { data: existing } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', cleanEmail)
-      .maybeSingle();
-
-    if (existing) {
-      return { error: 'อีเมลนี้ถูกใช้สมัครสมาชิกแล้ว' };
-    }
-
-    // 2. เพิ่มผู้ใช้ใหม่
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        name: name.trim(),
-        email: cleanEmail,
-        password: passwordHash
-      })
-      .select('id, name, email')
-      .single();
-
+    const { data, error } = await supabase.rpc(fnName, args);
     if (error) {
-      console.warn('Supabase register error:', error.message);
+      // เช่น ติดต่อไม่ได้ หรือยังไม่ได้สร้างฟังก์ชัน → ให้ระบบใช้บัญชีสำรองแทน
+      console.warn(`Supabase ${fnName} error:`, error.message);
       return null;
     }
-
-    return {
-      userId: data.id,
-      name: data.name,
-      email: data.email
-    };
+    if (!data) return null;
+    if (data.error) {
+      return { error: AUTH_ERROR_MESSAGES[data.error] || 'เกิดข้อผิดพลาดในการตรวจสอบบัญชี' };
+    }
+    return { userId: data.id, name: data.name, email: data.email };
   } catch (err) {
-    console.warn('Unexpected Supabase register error:', err);
+    console.warn(`Unexpected Supabase ${fnName} error:`, err);
     return null;
   }
 }
 
 /**
- * เข้าสู่ระบบผู้ใช้โดยตรวจกับ Supabase Table 'users'
- * @param {Function} verifyPassword - (password, storedValue) => boolean (ฝั่ง Server, ดู lib/password.js)
+ * สมัครสมาชิกผู้ใช้ใหม่ (ฐานข้อมูลแฮชรหัสผ่านด้วย bcrypt เอง)
+ * @returns {Promise<Object|null>} ผู้ใช้, { error } หรือ null เมื่อใช้ Supabase ไม่ได้
  */
-export async function loginUserInSupabase(email, password, verifyPassword) {
-  const supabase = getServerAuthClient();
-  if (!supabase) return null;
-
-  try {
-    const cleanEmail = email.trim().toLowerCase();
-
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, name, email, password')
-      .eq('email', cleanEmail)
-      .maybeSingle();
-
-    if (error) {
-      console.warn('Supabase login query error:', error.message);
-      return null;
-    }
-
-    if (!data) {
-      return { error: 'ไม่พบบัญชีผู้ใช้นี้ในระบบ' };
-    }
-
-    if (!verifyPassword(password, data.password)) {
-      return { error: 'รหัสผ่านไม่ถูกต้อง' };
-    }
-
-    return {
-      userId: data.id,
-      name: data.name,
-      email: data.email
-    };
-  } catch (err) {
-    console.warn('Unexpected Supabase login error:', err);
-    return null;
-  }
+export async function registerUserInSupabase(name, email, password) {
+  return callAuthFunction('register_user', { p_name: name, p_email: email, p_password: password });
 }
 
+/**
+ * เข้าสู่ระบบ (ฐานข้อมูลตรวจรหัสผ่าน และอัปเกรดรหัสผ่านแบบเก่าเป็น bcrypt อัตโนมัติ)
+ * @returns {Promise<Object|null>} ผู้ใช้, { error } หรือ null เมื่อใช้ Supabase ไม่ได้
+ */
+export async function loginUserInSupabase(email, password) {
+  return callAuthFunction('login_user', { p_email: email, p_password: password });
+}

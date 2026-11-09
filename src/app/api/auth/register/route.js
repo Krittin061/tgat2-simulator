@@ -8,7 +8,6 @@
 import { NextResponse } from 'next/server';
 import { registerUser } from '@/lib/examEngine';
 import { registerUserInSupabase } from '@/lib/supabase';
-import { hashPassword } from '@/lib/password';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -43,8 +42,8 @@ export async function POST(request) {
       );
     }
 
-    // 1. ลองสมัครสมาชิกบน Supabase Table 'users' ก่อนเป็นอันดับ 1 (เก็บเฉพาะรหัสผ่านที่แฮชแล้ว)
-    const supabaseResult = await registerUserInSupabase(name, email, hashPassword(password));
+    // 1. ลองสมัครสมาชิกบน Supabase Table 'users' ก่อนเป็นอันดับ 1 (ฐานข้อมูลแฮชรหัสผ่านด้วย bcrypt)
+    const supabaseResult = await registerUserInSupabase(name, email, password);
     if (supabaseResult?.error) {
       return NextResponse.json({ error: supabaseResult.error }, { status: 409 });
     }
