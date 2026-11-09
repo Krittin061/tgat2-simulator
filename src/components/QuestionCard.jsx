@@ -56,7 +56,16 @@ export function QuestionCard({
             fontWeight: 600,
             color: 'var(--color-text-secondary)'
           }}>
-            {question.skillLabel} • {question.topic}
+            <span>{question.skillLabel}</span>
+            <span style={{ color: 'var(--color-text-muted)' }}> • </span>
+            <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>
+              {question.subtopicName || question.topic}
+            </span>
+            {question.subtopicRange && (
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginLeft: '6px' }}>
+                ({question.subtopicRange})
+              </span>
+            )}
           </div>
         </div>
         

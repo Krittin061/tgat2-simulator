@@ -88,7 +88,7 @@ export function AnswerKeyReview({ detailedAnswers, skillBreakdown }) {
                     )}
                     <div>
                       <div style={{ fontWeight: 700, color: 'var(--color-navy-deep)' }}>
-                        ข้อ {item.displayOrder} <span style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>• {item.skillLabel}</span>
+                        ข้อ {item.displayOrder} <span style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>• {item.skillLabel} • <strong style={{ color: 'var(--color-primary)' }}>{item.subtopicName || item.topic}</strong></span>
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
                         คุณตอบ: {item.userAnswer || 'ไม่ได้ตอบ'} | เฉลย: {item.correctAnswer}

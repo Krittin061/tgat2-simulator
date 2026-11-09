@@ -188,6 +188,9 @@ export default function Home() {
       if (mode === 'practice' && options?.skills && options.skills.length > 0) {
         url += `&skills=${options.skills.join(',')}`;
       }
+      if (mode === 'practice' && options?.subtopics && options.subtopics.length > 0) {
+        url += `&subtopics=${options.subtopics.join(',')}`;
+      }
 
       const res = await fetch(url);
       const data = await res.json();
