@@ -8,7 +8,6 @@
 import { NextResponse } from 'next/server';
 import { loginUser } from '@/lib/examEngine';
 import { loginUserInSupabase } from '@/lib/supabase';
-import { verifyPassword } from '@/lib/password';
 
 export async function POST(request) {
   let body;
@@ -30,7 +29,7 @@ export async function POST(request) {
     }
 
     // 1. ตรวจสอบข้อมูลผู้ใช้กับ Supabase Table 'users' ก่อนเป็นอันดับ 1
-    const supabaseResult = await loginUserInSupabase(email, password, verifyPassword);
+    const supabaseResult = await loginUserInSupabase(email, password);
 
     if (supabaseResult?.error) {
       return NextResponse.json({ error: supabaseResult.error }, { status: 401 });
