@@ -8,6 +8,43 @@ let cachedClient = null;
 let lastUrl = '';
 let lastKey = '';
 
+// ---------------------------------------------------------------------------
+// ป้องกันหน้าเว็บค้างเมื่อ Supabase ติดต่อไม่ได้ (เช่น DNS หาโดเมนไม่เจอ / โปรเจกต์ถูกพัก)
+// เดิม supabase-js จะ retry หลายรอบ ทำให้ทุกคำขอ (เริ่มสอบ, ล็อกอิน) ช้าราว 7 วินาที
+// - จำกัดเวลาแต่ละคำขอ
+// - เมื่อเชื่อมต่อล้มเหลว ให้ข้าม Supabase ชั่วคราว แล้วใช้ข้อมูลสำรองในเครื่องทันที
+// ---------------------------------------------------------------------------
+const REQUEST_TIMEOUT_MS = 4000;
+const OUTAGE_BACKOFF_MS = 60 * 1000;
+let unavailableUntil = 0;
+
+export function isSupabaseTemporarilyUnavailable() {
+  return Date.now() < unavailableUntil;
+}
+
+async function fetchWithTimeout(input, init = {}) {
+  if (isSupabaseTemporarilyUnavailable()) {
+    throw new TypeError('Supabase is temporarily unreachable (skipping request)');
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  if (init.signal) {
+    if (init.signal.aborted) controller.abort();
+    else init.signal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    // ติดต่อไม่ได้ (network/DNS/timeout) → พักการเรียก Supabase ชั่วคราว
+    unavailableUntil = Date.now() + OUTAGE_BACKOFF_MS;
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function getSupabaseCredentials() {
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -32,14 +69,15 @@ export function saveSupabaseCredentials(url, anonKey) {
 
 export function getSupabaseClient() {
   const { url, anonKey, isConfigured } = getSupabaseCredentials();
-  if (!isConfigured) return null;
+  if (!isConfigured || isSupabaseTemporarilyUnavailable()) return null;
 
   if (cachedClient && lastUrl === url && lastKey === anonKey) {
     return cachedClient;
   }
 
   try {
-    cachedClient = createClient(url, anonKey);
+    // ปิด retry ของ supabase-js (หน่วง 1s, 2s, 4s) เพราะ fetchWithTimeout จัดการกรณีติดต่อไม่ได้แทนแล้ว
+    cachedClient = createClient(url, anonKey, { global: { fetch: fetchWithTimeout }, db: { retry: false } });
     lastUrl = url;
     lastKey = anonKey;
     return cachedClient;
@@ -155,11 +193,35 @@ export async function fetchQuestionsFromSupabase() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Client ฝั่ง Server สำหรับตาราง users (ข้อมูลบัญชีผู้ใช้)
+// ถ้าตั้งค่า SUPABASE_SERVICE_ROLE_KEY (ไม่ขึ้นต้นด้วย NEXT_PUBLIC_ จึงไม่ถูกส่งไปเบราว์เซอร์)
+// จะใช้คีย์นี้ เพื่อให้ปิดสิทธิ์อ่าน/แก้ตาราง users จากสาธารณะได้ (ดู supabase/secure_policies.sql)
+// ---------------------------------------------------------------------------
+let cachedServerClient = null;
+
+function getServerAuthClient() {
+  const serviceKey = typeof window === 'undefined' ? process.env.SUPABASE_SERVICE_ROLE_KEY : undefined;
+  if (!serviceKey) return getSupabaseClient();
+
+  const { url } = getSupabaseCredentials();
+  if (!url || isSupabaseTemporarilyUnavailable()) return null;
+  if (!cachedServerClient) {
+    cachedServerClient = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchWithTimeout },
+      db: { retry: false }
+    });
+  }
+  return cachedServerClient;
+}
+
 /**
  * สมัครสมาชิกผู้ใช้ใหม่ลงใน Supabase Table 'users'
+ * @param {string} passwordHash - รหัสผ่านที่แฮชแล้ว (ห้ามส่งรหัสผ่านจริง)
  */
-export async function registerUserInSupabase(name, email, password) {
-  const supabase = getSupabaseClient();
+export async function registerUserInSupabase(name, email, passwordHash) {
+  const supabase = getServerAuthClient();
   if (!supabase) return null;
 
   try {
@@ -182,7 +244,7 @@ export async function registerUserInSupabase(name, email, password) {
       .insert({
         name: name.trim(),
         email: cleanEmail,
-        password: password
+        password: passwordHash
       })
       .select('id, name, email')
       .single();
@@ -205,9 +267,10 @@ export async function registerUserInSupabase(name, email, password) {
 
 /**
  * เข้าสู่ระบบผู้ใช้โดยตรวจกับ Supabase Table 'users'
+ * @param {Function} verifyPassword - (password, storedValue) => boolean (ฝั่ง Server, ดู lib/password.js)
  */
-export async function loginUserInSupabase(email, password) {
-  const supabase = getSupabaseClient();
+export async function loginUserInSupabase(email, password, verifyPassword) {
+  const supabase = getServerAuthClient();
   if (!supabase) return null;
 
   try {
@@ -228,7 +291,7 @@ export async function loginUserInSupabase(email, password) {
       return { error: 'ไม่พบบัญชีผู้ใช้นี้ในระบบ' };
     }
 
-    if (data.password !== password) {
+    if (!verifyPassword(password, data.password)) {
       return { error: 'รหัสผ่านไม่ถูกต้อง' };
     }
 

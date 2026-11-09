@@ -225,7 +225,10 @@ export default function Home() {
         body: JSON.stringify({
           sessionId: examSession,
           answers,
-          timeSpentSeconds: timeSpent
+          timeSpentSeconds: timeSpent,
+          userId: user ? user.userId : 'anonymous',
+          // โหมดฝึกหัดตรวจและคิดคะแนนเฉพาะข้อที่ฝึก ตามลำดับที่แสดง
+          questionIds: examMode === 'practice' ? questions.map(q => q.id) : undefined
         })
       });
 
