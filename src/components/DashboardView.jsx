@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { 
   PlayCircle, FileText, History, Trophy, Clock, ArrowRight, 
   ShieldCheck, CheckSquare, Square, 
-  CheckCircle2, Target, Filter, ChevronDown, ChevronRight, Check
+  CheckCircle2, Target, Filter, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { TGAT2_BLUEPRINT } from '@/types/exam';
 
