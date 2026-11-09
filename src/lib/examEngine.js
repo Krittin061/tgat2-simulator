@@ -26,24 +26,65 @@ const examHistory = new Map();
  * ฟังก์ชัน: shuffleArray
  * หน้าที่: สุ่มลำดับสมาชิกในอาร์เรย์ด้วยอัลกอริทึม Fisher-Yates
  * @param {Array} array - อาร์เรย์ที่ต้องการสุ่ม
+ * @param {Function} random - ฟังก์ชันสุ่มเลข 0 - 1 (ค่าเริ่มต้น Math.random)
  * @returns {Array} อาร์เรย์ที่สุ่มลำดับแล้ว (สร้างอาร์เรย์ใหม่ ไม่แก้ไขตัวเดิม)
  */
-export function shuffleArray(array) {
+export function shuffleArray(array, random = Math.random) {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
 }
 
 /**
+ * ฟังก์ชัน: seededRandom
+ * หน้าที่: ตัวสุ่มที่ให้ผลเหมือนเดิมทุกครั้งเมื่อใช้ seed เดิม (xmur3 + mulberry32)
+ * ใช้สุ่มช้อยส์ของแต่ละข้อจาก sessionId เพื่อให้ Server คำนวณลำดับช้อยส์ของรอบสอบใหม่ได้เสมอ
+ * แม้ session ใน memory จะหายไป (เช่น Server รีสตาร์ต หรือคำขอไปตกที่ instance อื่นบน Serverless)
+ * @param {string} seed - ข้อความตั้งต้น เช่น "exam_1696789012345_abc12:21"
+ * @returns {Function} ฟังก์ชันสุ่มเลข 0 - 1
+ */
+export function seededRandom(seed) {
+  let h = 1779033703 ^ seed.length;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let state = h >>> 0;
+  return () => {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// รหัสรอบสอบจริงที่สร้างจาก generateSessionId (โหมดฝึกหัดใช้ 'practice_session' และไม่สุ่มช้อยส์)
+const isRealExamSession = (sessionId) => typeof sessionId === 'string' && sessionId.startsWith('exam_');
+
+/**
+ * ฟังก์ชัน: shuffleChoicesForSession
+ * หน้าที่: สุ่มช้อยส์ของข้อสอบ 1 ข้อด้วย seed จาก sessionId + รหัสข้อ (ได้ผลเดิมทุกครั้ง)
+ */
+function shuffleChoicesForSession(question, sessionId) {
+  return shuffleChoices(question, seededRandom(`${sessionId}:${question.id}`));
+}
+
+// ช้อยส์แบบข้อสรุป "ข้อ ก. ข้อเดียว", "ข้อ ข. และ ค." ต้องเรียงตามลำดับเดิมจึงจะอ่านเข้าใจ
+const CONCLUSION_CHOICE_PATTERN = /^ข้อ [กขค]\./;
+
+/**
  * ฟังก์ชัน: shuffleChoices
  * หน้าที่: สุ่มลำดับช้อยส์ในข้อสอบ 1 ข้อ พร้อมอัปเดตคำตอบที่ถูกต้อง
  * @param {Object} question - ข้อสอบต้นฉบับ (มี choices และ correctAnswer)
+ * @param {Function} random - ฟังก์ชันสุ่มเลข 0 - 1 (ค่าเริ่มต้น Math.random)
  * @returns {Object} ข้อสอบที่ช้อยส์ถูกสุ่มแล้ว + correctAnswer อัปเดตตามตำแหน่งใหม่
+ *   + choiceMap ({ id ใหม่: id เดิม }) สำหรับแปลงคำตอบกลับไปเป็นลำดับต้นฉบับตอนแสดงเฉลย
  */
-export function shuffleChoices(question) {
+export function shuffleChoices(question, random = Math.random) {
   // ไม่สุ่มช้อยส์สำหรับ:
   // 1. ข้อสอบมิติสัมพันธ์ที่มีภาพ (ตัวเลือกอิงตามหมายเลข 1-5 ในรูปภาพ)
   // 2. ข้อสอบสดมภ์ หรือ ความเพียงพอของข้อมูล หรือ เงื่อนไข ที่มีตัวเลือกมาตรฐาน ก-ค หรือ 1-5
@@ -55,7 +96,8 @@ export function shuffleChoices(question) {
     question.topic?.includes('เงื่อนไขสถานการณ์') ||
     (question.choices && question.choices[0]?.text?.startsWith('ตัวเลือกที่')) ||
     (question.choices && question.choices[0]?.text?.includes('สดมภ์ ก')) ||
-    (question.choices && question.choices[0]?.text?.includes('ข้อมูล ก'))
+    (question.choices && question.choices[0]?.text?.includes('ข้อมูล ก')) ||
+    (question.choices && CONCLUSION_CHOICE_PATTERN.test(question.choices[0]?.text || ''))
   ) {
     return question;
   }
@@ -66,13 +108,15 @@ export function shuffleChoices(question) {
   const correctChoiceId = question.correctAnswer;
 
   // สุ่มลำดับช้อยส์
-  const shuffledChoices = shuffleArray(originalChoices);
+  const shuffledChoices = shuffleArray(originalChoices, random);
 
   // กำหนด id ใหม่ตามลำดับ (1, 2, 3, 4, 5)
   // และหา id ใหม่ของช้อยส์ที่ถูกต้อง
   let newCorrectAnswer = 1;
+  const choiceMap = {};
   const renamedChoices = shuffledChoices.map((choice, index) => {
     const newId = index + 1;
+    choiceMap[newId] = choice.id;
     if (choice.id === correctChoiceId) {
       newCorrectAnswer = newId;
     }
@@ -82,7 +126,8 @@ export function shuffleChoices(question) {
   return {
     ...question,
     choices: renamedChoices,
-    correctAnswer: newCorrectAnswer
+    correctAnswer: newCorrectAnswer,
+    choiceMap
   };
 }
 
@@ -157,13 +202,15 @@ export function createExamSession(userId, sourceQuestions = TGAT2_QUESTIONS) {
   }
 
   // สุ่มลำดับช้อยส์เฉพาะข้อสอบที่ไม่ได้อิงตัวเลือกตามรูปภาพหรือตาราง
-  const questionsWithShuffledChoices = orderedQuestions.map(q => shuffleChoices(q));
+  // ใช้ seed จาก sessionId เพื่อให้ submitExam คำนวณลำดับเดิมได้แม้ session ใน memory หายไป
+  const questionsWithShuffledChoices = orderedQuestions.map(q => shuffleChoicesForSession(q, sessionId));
 
   // เก็บข้อมูลเฉลยไว้ฝั่ง Server (ส่วนนี้ Frontend จะไม่ได้รับ)
   const answerKey = {};
   questionsWithShuffledChoices.forEach((q, index) => {
     answerKey[q.id] = {
       correctAnswer: q.correctAnswer,
+      choiceMap: q.choiceMap || null,
       explanation: q.explanation,
       subtopicId: q.subtopicId || getQuestionSubtopicId(q),
       subtopicName: q.subtopicName || SUBTOPIC_MAP[getQuestionSubtopicId(q)]?.name || q.topic,
@@ -283,10 +330,13 @@ export function submitExam(sessionId, answers, timeSpentSeconds) {
 
   // ตรวจสอบว่า session มีอยู่ในหน่วยความจำหรือไม่ หากไม่มีให้สร้างเฉลยสำรองจากคลังข้อสอบหลัก
   if (!session) {
+    // รอบสอบจริงสุ่มช้อยส์ด้วย seed จาก sessionId จึงคำนวณลำดับช้อยส์เดิมกลับมาได้
     const fallbackAnswerKey = {};
     TGAT2_QUESTIONS.forEach((q, index) => {
+      const asShown = isRealExamSession(sessionId) ? shuffleChoicesForSession(q, sessionId) : q;
       fallbackAnswerKey[q.id] = {
-        correctAnswer: q.correctAnswer,
+        correctAnswer: asShown.correctAnswer,
+        choiceMap: asShown.choiceMap || null,
         explanation: q.explanation,
         subtopicId: getQuestionSubtopicId(q),
         subtopicName: SUBTOPIC_MAP[getQuestionSubtopicId(q)]?.name || q.topic,
@@ -419,6 +469,11 @@ export function submitExam(sessionId, answers, timeSpentSeconds) {
     const serverAnswer = answerKey[qId];
     const userAnswer = answers[qId];
     const isCorrect = userAnswer === serverAnswer.correctAnswer;
+    // เฉลยแสดงช้อยส์ตามลำดับต้นฉบับ (ให้ตรงกับคำอธิบายที่อ้างเลขตัวเลือก)
+    // จึงต้องแปลงคำตอบจากลำดับที่ผู้สอบเห็น (หลังสุ่ม) กลับเป็นเลขช้อยส์ต้นฉบับ
+    const userAnswerOriginal = (userAnswer !== undefined && userAnswer !== null && serverAnswer.choiceMap)
+      ? (serverAnswer.choiceMap[userAnswer] ?? userAnswer)
+      : userAnswer;
     const subtopicId = serverAnswer.subtopicId || getQuestionSubtopicId(originalQ);
     const subtopicMeta = SUBTOPIC_MAP[subtopicId];
 
@@ -434,7 +489,7 @@ export function submitExam(sessionId, answers, timeSpentSeconds) {
       content: originalQ.content,
       choices: originalQ.choices,
       correctAnswer: originalQ.correctAnswer,
-      userAnswer: userAnswer || null,
+      userAnswer: userAnswerOriginal || null,
       isCorrect,
       isAnswered: userAnswer !== undefined && userAnswer !== null,
       explanation: originalQ.explanation,
