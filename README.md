@@ -41,27 +41,23 @@
 +-------------------------------------------------------------+
 |                       Supabase Cloud                        |
 +-------------------------------------------------------------+
+|  [public.questions]   อ่านได้สาธารณะ (80 ข้อ, choices JSONB)  |
+|  [public.users]       ปิดสาธารณะ — รหัสผ่าน bcrypt           |
+|  [public.user_sessions] ปิดสาธารณะ — เก็บ SHA-256 ของ token  |
+|  [public.exam_attempts] ปิดสาธารณะ — ผลสอบรายบุคคล           |
 |                                                             |
-|  [public.questions]         [storage.objects: exam-images]  |
-|  - 80 ข้อสอบฉบับสมบูรณ์     - 30 ภาพโจทย์มิติสัมพันธ์         |
-|  - choices (JSONB)          - q41.png - q70.png             |
-|  - correct_answer, image    - CDN Public Access             |
-|          |                                                  |
-|          +--------------------------+                       |
-|                                     |                       |
-|  [public.users]             [public.exam_attempts]          |
-|  - id (UUID PK)             - id (UUID PK)                  |
-|  - name, email (UNIQUE)     - user_id (FK -> users.id)      |
-|  - password (Hashed/Safe)   - score, accuracy, time_spent   |
-|  - role ('student')         - skill_breakdown, user_answers |
-|                                                             |
+|  ฟังก์ชัน (เรียกด้วย anon key, ตรวจรหัสผ่าน/session เอง):     |
+|  register_user, login_user, get_session_user,               |
+|  logout_session, save_exam_attempt, list_exam_attempts,     |
+|  get_exam_attempt                                           |
 +-------------------------------------------------------------+
 ```
 
-1. **ตาราง `questions`**: จัดเก็บโจทย์ภาษาไทย UTF-8 ทั้ง 80 ข้อ ช้อยส์ เฉลยละเอียด และลิงก์รูปภาพ
-2. **Storage Bucket `exam-images`**: จัดเก็บรูปภาพโจทย์มิติสัมพันธ์ ข้อ 41–70 ดึงผ่าน Public CDN
-3. **ตาราง `users`**: จัดเก็บข้อมูลผู้ใช้งานระบบและนักเรียนที่ลงทะเบียน
-4. **ตาราง `exam_attempts`**: จัดเก็บบันทึกประวัติการสอบ คะแนนรวม และการวิเคราะห์รายทักษะ
+1. **ตาราง `questions`**: โจทย์ภาษาไทยทั้ง 80 ข้อ ช้อยส์ เฉลยละเอียด และพาธรูปภาพ (รูปอยู่ที่ `public/exam_images/` ของแอป)
+2. **ตาราง `users`**: บัญชีผู้ใช้ รหัสผ่านแฮชด้วย bcrypt และตัวนับการใส่รหัสผิด
+3. **ตาราง `user_sessions`**: session การเข้าสู่ระบบ (แอปเก็บ token ใน cookie แบบ HttpOnly)
+4. **ตาราง `exam_attempts`**: ผลสอบของผู้ใช้แต่ละคน ดูได้เฉพาะเจ้าของ
+5. โครงสร้างตารางทั้งหมดอยู่ใน `supabase/schema.sql` (มีลำดับการติดตั้งฐานข้อมูลใหม่อยู่ที่หัวไฟล์)
 
 ---
 
