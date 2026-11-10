@@ -553,14 +553,6 @@ export function submitExam(sessionId, answers, timeSpentSeconds, options = {}) {
 }
 
 /**
- * ฟังก์ชัน: getSession
- * หน้าที่: ดึงข้อมูล session เพื่อตรวจสอบสถานะ
- */
-export function getSession(sessionId) {
-  return activeSessions.get(sessionId) || null;
-}
-
-/**
  * ฟังก์ชัน: registerUser / loginUser
  * หน้าที่: จัดการผู้ใช้จำลอง (ในระบบจริงจะเชื่อมต่อ Database)
  */

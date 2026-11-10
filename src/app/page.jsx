@@ -14,7 +14,6 @@ import { RegisterForm } from '@/components/RegisterForm';
 import { DashboardView } from '@/components/DashboardView';
 import { ExamView } from '@/components/ExamView';
 import { ResultView } from '@/components/ResultView';
-import { SupabaseConfigModal } from '@/components/SupabaseConfigModal';
 import { saveActiveSession, loadActiveSession, clearActiveSession } from '@/lib/storage';
 import { RotateCcw } from 'lucide-react';
 
@@ -40,10 +39,7 @@ export default function Home() {
   const [examStartTime, setExamStartTime] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [examResult, setExamResult] = useState(null);
-  
-  // สถานะ Modal
-  const [showSupabaseModal, setShowSupabaseModal] = useState(false);
-  
+
   // สถานะสำหรับกู้คืนข้อสอบที่ทำค้างไว้ (Autosave Recovery)
   const [recoverableSession, setRecoverableSession] = useState(null);
 
@@ -360,15 +356,6 @@ export default function Home() {
             onNewExam={() => setCurrentView('dashboard')}
           />
         )}
-
-        {/* Supabase Database Configuration Modal */}
-        <SupabaseConfigModal 
-          isOpen={showSupabaseModal}
-          onClose={() => setShowSupabaseModal(false)}
-          onSaved={() => {
-            if (user) loadHistory();
-          }}
-        />
 
         {/* Session Recovery Modal (กู้คืนข้อสอบที่ทำค้างไว้) */}
         {recoverableSession && currentView !== 'exam' && (

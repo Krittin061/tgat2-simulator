@@ -1,9 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SKILL_METADATA } from '@/types/exam';
 
-const STORAGE_KEY_URL = 'tgat2_supabase_url';
-const STORAGE_KEY_KEY = 'tgat2_supabase_anon_key';
-
 let cachedClient = null;
 let lastUrl = '';
 let lastKey = '';
@@ -46,25 +43,10 @@ async function fetchWithTimeout(input, init = {}) {
 }
 
 export function getSupabaseCredentials() {
-  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-  if (typeof window !== 'undefined') {
-    const customUrl = localStorage.getItem(STORAGE_KEY_URL);
-    const customKey = localStorage.getItem(STORAGE_KEY_KEY);
-    if (customUrl) url = customUrl;
-    if (customKey) anonKey = customKey;
-  }
-
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const isConfigured = Boolean(url && anonKey && !url.includes('your-project-id'));
   return { url, anonKey, isConfigured };
-}
-
-export function saveSupabaseCredentials(url, anonKey) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY_URL, url.trim());
-  localStorage.setItem(STORAGE_KEY_KEY, anonKey.trim());
-  cachedClient = null;
 }
 
 export function getSupabaseClient() {
