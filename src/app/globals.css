@@ -1188,6 +1188,8 @@ html, body {
   .ptm-dialog {
     width: 100%;
     max-height: calc(100dvh - 8px);
+    /* margin: auto (desktop) would re-center the sheet vertically; pin it to the bottom edge */
+    margin: auto 0 0;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     border-bottom: none;
   }
