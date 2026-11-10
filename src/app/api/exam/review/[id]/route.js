@@ -1,21 +1,34 @@
 /**
  * API Route: GET /api/exam/review/[id]
- * หน้าที่: ดึงข้อมูลเฉลยละเอียดของผลสอบ (เฉพาะที่สอบเสร็จแล้ว)
- * รับ: params.id (Result ID) และ ?userId=xxx
+ * หน้าที่: ดึงผลสอบพร้อมเฉลยละเอียด เฉพาะผลสอบของผู้ใช้ที่ล็อกอินอยู่ (ตรวจจาก cookie session)
  * ส่งกลับ: { result (รวมเฉลยละเอียด) }
  */
 
 import { NextResponse } from 'next/server';
-import { getResultById } from '@/lib/examEngine';
+import { getResultById, hydrateResult } from '@/lib/examEngine';
+import { getExamAttemptFromSupabase } from '@/lib/supabase';
+import { getCurrentSession, isMemoryToken } from '@/lib/session';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(request, { params }) {
   try {
-    // Next.js 15+: params เป็น Promise ต้อง await ก่อนใช้ (เดิมได้ id = undefined จึงตอบ 404 เสมอ)
+    // Next.js 15+: params เป็น Promise ต้อง await ก่อนใช้
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'anonymous';
+    const { user, token } = await getCurrentSession();
 
-    const result = getResultById(userId, id);
+    if (!user) {
+      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบเพื่อดูผลสอบ' }, { status: 401 });
+    }
+
+    let result = null;
+    if (token && !isMemoryToken(token) && UUID_PATTERN.test(id)) {
+      const fromDb = await getExamAttemptFromSupabase(token, id);
+      if (fromDb) result = hydrateResult(fromDb);
+    }
+    if (!result) {
+      result = getResultById(user.userId, id);
+    }
 
     if (!result) {
       return NextResponse.json(

@@ -1,14 +1,16 @@
 /**
  * API Route: POST /api/exam/submit
  * หน้าที่: รับคำตอบจาก Frontend แล้วตรวจคะแนนฝั่ง Server
- * รับ: { sessionId, answers, timeSpentSeconds }
+ * รับ: { sessionId, answers, timeSpentSeconds, questionIds? } (ผู้สอบมาจาก cookie session)
  * ส่งกลับ: ผลคะแนนรวม คะแนนแยกทักษะ และเฉลยละเอียดทุกข้อ
  * 
  * ข้อสำคัญ: เฉลยละเอียดจะถูกส่งเฉพาะหลังส่งข้อสอบเท่านั้น
  */
 
 import { NextResponse } from 'next/server';
-import { submitExam } from '@/lib/examEngine';
+import { submitExam, compactResult } from '@/lib/examEngine';
+import { saveExamAttemptInSupabase } from '@/lib/supabase';
+import { getCurrentSession, isMemoryToken } from '@/lib/session';
 
 export async function POST(request) {
   let body;
@@ -19,7 +21,8 @@ export async function POST(request) {
   }
 
   try {
-    const { sessionId, answers, timeSpentSeconds, userId, questionIds } = body || {};
+    const { sessionId, answers, timeSpentSeconds, questionIds } = body || {};
+    const { user, token } = await getCurrentSession();
 
     // ตรวจสอบข้อมูลที่จำเป็น
     if (!sessionId || typeof sessionId !== 'string') {
@@ -45,7 +48,7 @@ export async function POST(request) {
       cleanAnswers,
       Number.isFinite(timeSpentSeconds) && timeSpentSeconds > 0 ? Math.round(timeSpentSeconds) : 0,
       {
-        userId: typeof userId === 'string' && userId ? userId : undefined,
+        userId: user?.userId,
         questionIds: Array.isArray(questionIds) ? questionIds : undefined
       }
     );
@@ -53,6 +56,12 @@ export async function POST(request) {
     // ตรวจว่ามี error หรือไม่
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    // ผู้ใช้ที่ล็อกอิน: บันทึกผลสอบลงฐานข้อมูล (เก็บแบบย่อ) และใช้ id จากฐานข้อมูลสำหรับดูเฉลยย้อนหลัง
+    if (user && token && !isMemoryToken(token)) {
+      const savedId = await saveExamAttemptInSupabase(token, compactResult(result));
+      if (savedId) result.id = savedId;
     }
 
     return NextResponse.json({

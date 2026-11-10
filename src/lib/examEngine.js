@@ -637,10 +637,11 @@ export function compactResult(result) {
   if (!result?.detailedAnswers) return result;
   return {
     ...result,
-    detailedAnswers: result.detailedAnswers.map(
-      // eslint-disable-next-line no-unused-vars
-      ({ content, choices, explanation, image, svgIllustration, ...rest }) => rest
-    )
+    detailedAnswers: result.detailedAnswers.map(answer => {
+      const slim = { ...answer };
+      for (const key of ['content', 'choices', 'explanation', 'image', 'svgIllustration']) delete slim[key];
+      return slim;
+    })
   };
 }
 
