@@ -603,3 +603,63 @@ export function getResultById(userId, resultId) {
   const history = examHistory.get(userId) || [];
   return history.find(r => r.id === resultId) || null;
 }
+
+// ---------------------------------------------------------------------------
+// Session สำรองในหน่วยความจำ (ใช้เมื่อ Supabase ใช้งานไม่ได้) — token ขึ้นต้นด้วย "mem_"
+// ---------------------------------------------------------------------------
+const memorySessions = new Map();
+const MEMORY_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function createMemorySession(user) {
+  const token = `mem_${Date.now().toString(36)}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  memorySessions.set(token, { user, expiresAt: Date.now() + MEMORY_SESSION_TTL_MS });
+  return token;
+}
+
+export function getMemorySessionUser(token) {
+  const entry = memorySessions.get(token);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    memorySessions.delete(token);
+    return null;
+  }
+  return entry.user;
+}
+
+export function deleteMemorySession(token) {
+  memorySessions.delete(token);
+}
+
+// ---------------------------------------------------------------------------
+// ย่อผลสอบก่อนบันทึกลงฐานข้อมูล (ตัดเนื้อหาข้อสอบ/เฉลยที่ซ้ำกับคลังข้อสอบ) และเติมกลับตอนอ่าน
+// ---------------------------------------------------------------------------
+export function compactResult(result) {
+  if (!result?.detailedAnswers) return result;
+  return {
+    ...result,
+    detailedAnswers: result.detailedAnswers.map(answer => {
+      const slim = { ...answer };
+      for (const key of ['content', 'choices', 'explanation', 'image', 'svgIllustration']) delete slim[key];
+      return slim;
+    })
+  };
+}
+
+export function hydrateResult(result) {
+  if (!result?.detailedAnswers) return result;
+  return {
+    ...result,
+    detailedAnswers: result.detailedAnswers.map(answer => {
+      const q = QUESTION_BY_ID.get(Number(answer.questionId));
+      if (!q) return answer;
+      return {
+        content: q.content,
+        choices: q.choices,
+        explanation: q.explanation,
+        image: q.image || null,
+        svgIllustration: q.svgIllustration || null,
+        ...answer
+      };
+    })
+  };
+}

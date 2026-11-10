@@ -87,72 +87,6 @@ export function getSupabaseClient() {
   }
 }
 
-export async function saveExamAttemptToSupabase(result) {
-  const supabase = getSupabaseClient();
-
-  if (typeof window !== 'undefined') {
-    try {
-      const historyKey = 'tgat2_exam_history';
-      const existing = JSON.parse(localStorage.getItem(historyKey) || '[]');
-      const newEntry = { ...result, savedLocallyAt: new Date().toISOString() };
-      localStorage.setItem(historyKey, JSON.stringify([newEntry, ...existing].slice(0, 30)));
-    } catch (e) {
-      console.warn('Could not save to localStorage:', e);
-    }
-  }
-
-  if (!supabase) {
-    return {
-      success: true,
-      isSupabase: false,
-      message: 'บันทึกในหน่วยความจำเครื่อง (LocalStorage) เรียบร้อยแล้ว (สามารถเชื่อมต่อ Supabase ได้ที่เมนูตั้งค่า)'
-    };
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('exam_attempts')
-      .insert({
-        user_id: result.userId || 'anonymous',
-        user_name: result.userName || result.name || 'ผู้เข้าสอบ',
-        mode: result.mode,
-        total_score: result.totalScore,
-        correct_count: result.correctCount,
-        total_questions: result.totalQuestions,
-        time_spent_seconds: result.timeSpentSeconds,
-        skill_breakdown: result.skillBreakdown,
-        answers: result.answers,
-        created_at: result.submittedAt,
-        updated_at: new Date().toISOString()
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.warn('Supabase insertion error:', error);
-      return {
-        success: true,
-        isSupabase: false,
-        message: `บันทึกในเครื่องสำเร็จ แต่เชื่อม Supabase ไม่ผ่าน: ${error.message}`
-      };
-    }
-
-    return {
-      success: true,
-      id: data?.id,
-      isSupabase: true,
-      message: 'บันทึกผลการสอบขึ้น Supabase Cloud สำเร็จเรียบร้อย!'
-    };
-  } catch (err) {
-    console.error('Unexpected Supabase save error:', err);
-    return {
-      success: true,
-      isSupabase: false,
-      message: 'บันทึกในเครื่องเรียบร้อย (เกิดข้อผิดพลาดในการติดต่อฐานข้อมูล)'
-    };
-  }
-}
-
 /**
  * ดึงชุดข้อสอบสด ๆ จาก Supabase Table 'questions'
  * @returns {Promise<Array|null>} รายการข้อสอบทั้งหมด หรือ null หากไม่พบ
@@ -217,10 +151,15 @@ async function callAuthFunction(fnName, args) {
       return null;
     }
     if (!data) return null;
+    if (data.error === 'locked') {
+      const minutes = Math.max(1, Math.ceil((data.retry_after_seconds || 900) / 60));
+      return { error: `ใส่รหัสผ่านผิดหลายครั้ง บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ในอีก ${minutes} นาที`, locked: true };
+    }
     if (data.error) {
       return { error: AUTH_ERROR_MESSAGES[data.error] || 'เกิดข้อผิดพลาดในการตรวจสอบบัญชี' };
     }
-    return { userId: data.id, name: data.name, email: data.email };
+    // token = session ในฐานข้อมูล (ไม่มีถ้าฐานข้อมูลยังไม่ได้รัน sessions_history.sql)
+    return { userId: data.id, name: data.name, email: data.email, token: data.token || null };
   } catch (err) {
     console.warn(`Unexpected Supabase ${fnName} error:`, err);
     return null;
@@ -241,4 +180,54 @@ export async function registerUserInSupabase(name, email, password) {
  */
 export async function loginUserInSupabase(email, password) {
   return callAuthFunction('login_user', { p_email: email, p_password: password });
+}
+
+// ---------------------------------------------------------------------------
+// Session และประวัติสอบ (ฟังก์ชันในฐานข้อมูลตรวจ token ทุกครั้ง — ดู supabase/sessions_history.sql)
+// ทุกฟังก์ชันคืน null เมื่อใช้ Supabase ไม่ได้ เพื่อให้ผู้เรียกใช้ข้อมูลสำรองแทน
+// ---------------------------------------------------------------------------
+async function callSessionFunction(fnName, args) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc(fnName, args);
+    if (error) {
+      console.warn(`Supabase ${fnName} error:`, error.message);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.warn(`Unexpected Supabase ${fnName} error:`, err);
+    return null;
+  }
+}
+
+/** @returns {Promise<Object|null>} { userId, name, email } | { error } | null */
+export async function getSessionUserFromSupabase(token) {
+  const data = await callSessionFunction('get_session_user', { p_token: token });
+  if (!data) return null;
+  if (data.error) return { error: data.error };
+  return { userId: data.id, name: data.name, email: data.email };
+}
+
+export async function logoutSessionInSupabase(token) {
+  return callSessionFunction('logout_session', { p_token: token });
+}
+
+/** @returns {Promise<string|null>} id ของผลสอบในฐานข้อมูล */
+export async function saveExamAttemptInSupabase(token, result) {
+  const data = await callSessionFunction('save_exam_attempt', { p_token: token, p_result: result });
+  return data && !data.error ? data.id : null;
+}
+
+/** @returns {Promise<Array|null>} ประวัติแบบสรุป (ไม่มี detailedAnswers) */
+export async function listExamAttemptsFromSupabase(token, limit = 30) {
+  const data = await callSessionFunction('list_exam_attempts', { p_token: token, p_limit: limit });
+  return Array.isArray(data) ? data : null;
+}
+
+/** @returns {Promise<Object|null>} ผลสอบ (detailedAnswers แบบย่อ) */
+export async function getExamAttemptFromSupabase(token, id) {
+  const data = await callSessionFunction('get_exam_attempt', { p_token: token, p_id: id });
+  return data && !data.error ? data : null;
 }

@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { registerUser } from '@/lib/examEngine';
 import { registerUserInSupabase } from '@/lib/supabase';
+import { startSession } from '@/lib/session';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -49,11 +50,14 @@ export async function POST(request) {
     }
 
     // 2. สำรองข้อมูลลงหน่วยความจำเซิร์ฟเวอร์
-    const user = supabaseResult || registerUser(name.trim(), email, password);
+    const created = supabaseResult || registerUser(name.trim(), email, password);
 
-    if (user.error) {
-      return NextResponse.json({ error: user.error }, { status: 409 });
+    if (created.error) {
+      return NextResponse.json({ error: created.error }, { status: 409 });
     }
+
+    // 3. เข้าสู่ระบบให้อัตโนมัติ (cookie แบบ HttpOnly)
+    const user = await startSession(created);
 
     return NextResponse.json({
       success: true,

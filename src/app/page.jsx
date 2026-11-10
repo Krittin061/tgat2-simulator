@@ -16,7 +16,6 @@ import { ExamView } from '@/components/ExamView';
 import { ResultView } from '@/components/ResultView';
 import { SupabaseConfigModal } from '@/components/SupabaseConfigModal';
 import { saveActiveSession, loadActiveSession, clearActiveSession } from '@/lib/storage';
-import { saveExamAttemptToSupabase } from '@/lib/supabase';
 import { RotateCcw } from 'lucide-react';
 
 export default function Home() {
@@ -75,10 +74,10 @@ export default function Home() {
     }
   };
 
-  // ดึงข้อมูลประวัติผู้ใช้
-  const loadHistory = useCallback(async (userId) => {
+  // ดึงข้อมูลประวัติผู้ใช้ (Server ระบุผู้ใช้จาก cookie session)
+  const loadHistory = useCallback(async () => {
     try {
-      const res = await fetch(`/api/exam/history?userId=${userId}`);
+      const res = await fetch('/api/exam/history');
       const data = await res.json();
       if (data.success) {
         setHistory(data.history);
@@ -90,9 +89,46 @@ export default function Home() {
 
   useEffect(() => {
     if (user) {
-      loadHistory(user.userId);
+      loadHistory();
     }
   }, [user, loadHistory]);
+
+  // กู้คืนการเข้าสู่ระบบจาก cookie session เมื่อเปิด/รีเฟรชหน้าเว็บ
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled && data?.user) {
+          setUser(data.user);
+          setCurrentView(view => (view === 'landing' ? 'dashboard' : view));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // เปิดผลสอบจากประวัติ: ประวัติเป็นแบบสรุป จึงดึงเฉลยละเอียดจาก Server ก่อนแสดง
+  const openResult = async (res) => {
+    if (res?.detailedAnswers) {
+      setExamResult(res);
+      setCurrentView('result');
+      return;
+    }
+    try {
+      const response = await fetch(`/api/exam/review/${encodeURIComponent(res.id)}`);
+      const data = await response.json();
+      if (data.success) {
+        setExamResult(data.result);
+        setCurrentView('result');
+      } else {
+        alert(data.error || 'ไม่พบข้อมูลผลสอบนี้');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('ไม่สามารถโหลดผลสอบได้');
+    }
+  };
 
   // ตรวจสอบเซสชันข้อสอบที่บันทึกไว้ใน LocalStorage (Autosave Recovery) เมื่อโหลดหน้าเว็บ
   useEffect(() => {
@@ -167,7 +203,12 @@ export default function Home() {
     setCurrentView('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    }
     setUser(null);
     setHistory([]);
     setCurrentView('landing');
@@ -183,8 +224,7 @@ export default function Home() {
     setIsRevealed(false);
 
     try {
-      const userId = user ? user.userId : 'anonymous';
-      let url = `/api/exam/start?userId=${userId}&mode=${mode}`;
+      let url = `/api/exam/start?mode=${mode}`;
       if (mode === 'practice' && options?.skills && options.skills.length > 0) {
         url += `&skills=${options.skills.join(',')}`;
       }
@@ -226,7 +266,6 @@ export default function Home() {
           sessionId: examSession,
           answers,
           timeSpentSeconds: timeSpent,
-          userId: user ? user.userId : 'anonymous',
           // โหมดฝึกหัดตรวจและคิดคะแนนเฉพาะข้อที่ฝึก ตามลำดับที่แสดง
           questionIds: examMode === 'practice' ? questions.map(q => q.id) : undefined
         })
@@ -237,8 +276,7 @@ export default function Home() {
       if (data.success) {
         clearActiveSession();
         setExamResult(data.result);
-        saveExamAttemptToSupabase(data.result);
-        if (user) loadHistory(user.userId);
+        if (user) loadHistory();
         setCurrentView('result');
       } else {
         alert(data.error);
@@ -286,10 +324,7 @@ export default function Home() {
               user={user} 
               history={history} 
               onStartExam={startExam} 
-              onViewResult={(res) => {
-                setExamResult(res);
-                setCurrentView('result');
-              }}
+              onViewResult={openResult}
             />
           </div>
         )}
@@ -331,7 +366,7 @@ export default function Home() {
           isOpen={showSupabaseModal}
           onClose={() => setShowSupabaseModal(false)}
           onSaved={() => {
-            if (user) loadHistory(user.userId);
+            if (user) loadHistory();
           }}
         />
 

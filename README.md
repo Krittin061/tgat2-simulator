@@ -111,7 +111,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://gcdjeudviekotstbujuh.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
    - แอปใช้แค่ 2 ค่านี้ ไม่ต้องใช้ service role key
-   - ฐานข้อมูลต้องรัน `supabase/secure_auth.sql` แล้ว (ฟังก์ชันสมัคร/เข้าสู่ระบบ และปิดสิทธิ์สาธารณะที่อันตราย)
+   - ฐานข้อมูลต้องรัน `supabase/secure_auth.sql` แล้วตามด้วย `supabase/sessions_history.sql` (ฟังก์ชันสมัคร/เข้าสู่ระบบ, session แบบ cookie HttpOnly, ประวัติสอบรายบุคคล, ล็อกบัญชี 15 นาทีเมื่อใส่รหัสผ่านผิด 5 ครั้ง และปิดสิทธิ์สาธารณะที่อันตราย)
    - ถ้าติดต่อ Supabase ไม่ได้ ระบบจะใช้ข้อสอบจากไฟล์ในเครื่องและบัญชีสำรองในหน่วยความจำ Server อัตโนมัติ (ไม่ค้าง)
    - หากโปรเจกต์ Supabase ถูกพัก (Free tier พักอัตโนมัติเมื่อไม่มีการใช้งาน) ให้กด Restore ใน Supabase Dashboard
 

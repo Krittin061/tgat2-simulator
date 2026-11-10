@@ -8,16 +8,20 @@ import { NextResponse } from 'next/server';
 import { createExamSession, createPracticeQuestions } from '@/lib/examEngine';
 import { TGAT2_QUESTIONS } from '@/data/tgat2Questions';
 import { fetchQuestionsFromSupabase } from '@/lib/supabase';
+import { getCurrentSession } from '@/lib/session';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'anonymous';
     const mode = searchParams.get('mode') || 'real_exam';
 
     if (mode !== 'real_exam' && mode !== 'practice') {
       return NextResponse.json({ error: 'โหมดการสอบไม่ถูกต้อง' }, { status: 400 });
     }
+
+    // ผู้สอบมาจาก cookie session (ไม่เชื่อ userId ที่ส่งมาทาง URL)
+    const { user } = await getCurrentSession();
+    const userId = user?.userId || 'anonymous';
 
     // 1. ดึงข้อสอบสด ๆ จาก Supabase Table 'questions' (หากมี)
     const supabaseQuestions = await fetchQuestionsFromSupabase();

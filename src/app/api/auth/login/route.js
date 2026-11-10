@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { loginUser } from '@/lib/examEngine';
 import { loginUserInSupabase } from '@/lib/supabase';
+import { startSession } from '@/lib/session';
 
 export async function POST(request) {
   let body;
@@ -32,15 +33,18 @@ export async function POST(request) {
     const supabaseResult = await loginUserInSupabase(email, password);
 
     if (supabaseResult?.error) {
-      return NextResponse.json({ error: supabaseResult.error }, { status: 401 });
+      return NextResponse.json({ error: supabaseResult.error }, { status: supabaseResult.locked ? 429 : 401 });
     }
 
     // 2. สำรองข้อมูล (เมื่อ Supabase ใช้งานไม่ได้) — ตรวจรหัสผ่านเช่นกัน
-    const user = supabaseResult || loginUser(email, password);
+    const found = supabaseResult || loginUser(email, password);
 
-    if (user.error) {
-      return NextResponse.json({ error: user.error }, { status: 401 });
+    if (found.error) {
+      return NextResponse.json({ error: found.error }, { status: 401 });
     }
+
+    // 3. เริ่ม session (cookie แบบ HttpOnly) → รีเฟรชหน้าแล้วยังล็อกอินอยู่
+    const user = await startSession(found);
 
     return NextResponse.json({
       success: true,
