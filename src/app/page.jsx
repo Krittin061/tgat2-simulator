@@ -351,7 +351,7 @@ export default function Home() {
 
         {currentView === 'result' && examResult && (
           <ResultView 
-            examResult={examResult}
+            examResult={examResult} isLoggedIn={Boolean(user)}
             onBackToDashboard={() => setCurrentView('dashboard')}
             onNewExam={() => setCurrentView('dashboard')}
           />
