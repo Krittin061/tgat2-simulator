@@ -10,7 +10,7 @@ import { ResultAnalytics } from '@/components/ResultAnalytics';
 import { AnswerKeyReview } from '@/components/AnswerKeyReview';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 
-export function ResultView({ examResult, onBackToDashboard, onNewExam }) {
+export function ResultView({ examResult, isLoggedIn, onBackToDashboard, onNewExam }) {
   if (!examResult) return null;
 
   return (
@@ -70,7 +70,7 @@ export function ResultView({ examResult, onBackToDashboard, onNewExam }) {
             ตรวจสอบผลสอบและเฉลยครบถ้วนแล้ว?
           </div>
           <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
-            ระบบได้บันทึกคะแนนและบทวิเคราะห์ของคุณไว้ในประวัติการสอบเรียบร้อยแล้ว
+            {isLoggedIn ? 'ระบบได้บันทึกคะแนนและบทวิเคราะห์ของคุณไว้ในประวัติการสอบเรียบร้อยแล้ว' : 'ผลสอบนี้ไม่ได้ถูกบันทึก เพราะยังไม่ได้เข้าสู่ระบบ — เข้าสู่ระบบหรือสมัครสมาชิกเพื่อเก็บประวัติการสอบ'}
           </div>
         </div>
 

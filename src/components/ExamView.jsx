@@ -3,7 +3,7 @@
 /**
  * คอมโพเนนต์: ExamView
  * หน้าที่: ควบคุมการแสดงผลห้องสอบ (ทั้งโหมด Real Exam และ Practice Mode)
- * พร้อมระบบ Keyboard Shortcuts (1-5, N, P, F)
+ * พร้อมแถบความคืบหน้า กระดาษคำตอบ และหน้าต่างยืนยันก่อนส่งข้อสอบ
  */
 
 import React, { useState, useCallback } from 'react';
